@@ -43,6 +43,8 @@ public class LoginManager : MonoBehaviour
     [SerializeField]
     private Button loginNowButton;
 
+    public static string UID;
+
     void Start()
     {
         client = new HttpClient();
@@ -55,9 +57,9 @@ public class LoginManager : MonoBehaviour
         btn = regButton.GetComponent<Button>();
         btn.onClick.AddListener(RegOnClick);
         btn = noAccButton.GetComponent<Button>();
-        btn.onClick.AddListener(noAccOnClick);
+        btn.onClick.AddListener(NoAccOnClick);
         btn = loginNowButton.GetComponent<Button>();
-        btn.onClick.AddListener(loginNowOnClick);
+        btn.onClick.AddListener(LoginNowOnClick);
     }
 
     //PAYLOAD DEMO
@@ -126,7 +128,7 @@ public class LoginManager : MonoBehaviour
             regAccount.text = "";
             regPassword.text = "";
             regConfirmPassword.text = "";
-        loginInfo.text = "";
+            loginInfo.text = "";
         }
         else
         {
@@ -135,14 +137,14 @@ public class LoginManager : MonoBehaviour
         }
     }
 
-    void noAccOnClick() {
+    void NoAccOnClick() {
         loginAccount.text = "";
         loginPassword.text = "";
         loginPanel.SetActive(false);
         regPanel.SetActive(true);
     }
 
-    void loginNowOnClick() {
+    void LoginNowOnClick() {
         regInfo.text = "";
         regAccount.text = "";
         regPassword.text = "";

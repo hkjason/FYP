@@ -39,20 +39,46 @@ public class EXAssignManager : MonoBehaviour
         Button btn;
         btn = assignButton.GetComponent<Button>();
         btn.onClick.AddListener(OnAssign);
+
+        questionType.onValueChanged.AddListener(delegate {
+            ChangeType(questionType);
+        });
     }
 
     async void OnAssign()
     {
-        List<string> str = new List<string> { "Question", questionInput.text, "Answer", answerInput.text };
-        //var payload = StringEncoder(str);
-        var payload = "placeholdertest";
+        List<string> str = new List<string>();
+        switch (questionType.value)
+        {
+            case 0:
+                str = new List<string> { "userID", LoginManager.UID, "question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text};
+                break;
+            case 1:
+                str = new List<string> { "userID", LoginManager.UID, "question", questionInput.text, "questionType", "1", "answer", answerInput.text };
+                break;
+            default:
+                Debug.Log("Value error");
+                break;
+        }
+        var payload = StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/assignex", c);
         var content = await res.Content.ReadAsStringAsync();
 
         if (string.Compare(content, "assign successful") == 0)
         {
-
+            switch (questionType.value)
+            {
+                case 0:
+                    ResetMCValue();
+                    break;
+                case 1:
+                    ResetSQValue();
+                    break;
+                default:
+                    Debug.Log("Value error");
+                    break;
+            }
         }
         else if (string.Compare(content, "question exists") == 0)
         {
@@ -63,5 +89,48 @@ public class EXAssignManager : MonoBehaviour
             Debug.Log("ASSIGN ERROR");
             return;
         }
+    }
+
+    void ChangeType(TMP_Dropdown change) 
+    {
+        switch (change.value)
+        {
+            case 0:
+
+                break;
+            case 1:
+                break;
+            default:
+                Debug.Log("Value error");
+                break;
+        }
+    }
+
+    void ResetMCValue() {
+        questionInput.text = "";
+        aInput.text = "";
+        bInput.text = "";
+        cInput.text = "";
+        dInput.text = "";
+    }
+
+    void ResetSQValue() {
+        questionInput.text = "";
+        answerInput.text = "";
+    }
+
+    string StringEncoder(List<string> list)
+    {
+        string str = "";
+        str += "{";
+        for (int i = 0; i < list.Count - 1;)
+        {
+            str += "\"" + list[i++] + "\": ";
+            str += "\"" + list[i++] + "\"";
+            if (i < list.Count - 1)
+                str += ", ";
+        }
+        str += "}";
+        return str;
     }
 }
