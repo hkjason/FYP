@@ -18,6 +18,8 @@ public class EXAssignManager : MonoBehaviour
     [SerializeField]
     private TMP_Dropdown questionType;
     [SerializeField]
+    private TMP_InputField questionName;
+    [SerializeField]
     private TMP_InputField questionInput;
     [SerializeField]
     private TMP_InputField answerInput;
@@ -29,6 +31,8 @@ public class EXAssignManager : MonoBehaviour
     private TMP_InputField cInput;
     [SerializeField]
     private TMP_InputField dInput;
+    [SerializeField]
+    private TMP_InputField dueDate;
 
     void Start()
     {
