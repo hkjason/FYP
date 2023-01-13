@@ -55,15 +55,16 @@ public class EXAssignManager : MonoBehaviour
         switch (questionType.value)
         {
             case 0:
-                str = new List<string> { "userID", LoginManager.UID, "question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text};
+                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text, "duedate", dueDate.text};
                 break;
             case 1:
-                str = new List<string> { "userID", LoginManager.UID, "question", questionInput.text, "questionType", "1", "answer", answerInput.text };
+                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "1", "answer", answerInput.text, "duedate", dueDate.text};
                 break;
             default:
                 Debug.Log("Value error");
                 break;
         }
+
         var payload = StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/assignex", c);

@@ -5,6 +5,7 @@ using TMPro;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 
 public class EXListManager : MonoBehaviour
 {
@@ -13,6 +14,11 @@ public class EXListManager : MonoBehaviour
 
     [SerializeField]
     private TMP_Dropdown sortSelect;
+
+    [SerializeField]
+    private Transform exListParent;
+    [SerializeField]
+    private GameObject exObject;
 
     void Start()
     {
@@ -24,13 +30,24 @@ public class EXListManager : MonoBehaviour
             ChangeSort(sortSelect);
         });
 
-
+        GetExList();
     }
 
     async void GetExList()
     {
-        var res = await client.GetAsync("exercise/getex");
+        var payload = "{\"userID\": " + LoginManager.UID + "}";
+        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
+        var res = await client.PostAsync("exercise/getexlist", c);
         var content = await res.Content.ReadAsStringAsync();
+        Debug.Log("getexlist: " + content);
+    }
+
+    void DisplayEx()
+    {
+        GameObject exObj = Instantiate(exObject, Vector3.zero, Quaternion.identity, exListParent);
+        TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
+        exArray[0].text = "ABC";
+        exArray[1].text = "TEST";
     }
 
     void ChangeSort(TMP_Dropdown change)
@@ -48,5 +65,4 @@ public class EXListManager : MonoBehaviour
                 break;
         }
     }
-
 }
