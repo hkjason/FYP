@@ -66,7 +66,19 @@ public class LoginManager : MonoBehaviour
     //var payload = "{\"CustomerId\": 5,\"CustomerName\": \"Pepsi\"}";
     async void LoginOnClick()
     {
-        List<string> str = new List<string> { "AccountName", loginAccount.text, "PassWord", loginPassword.text };
+        if (loginAccount.text == "")
+        {
+            loginInfo.text = "Please enter a username";
+            loginPassword.text = "";
+            return;
+        }
+        if (loginPassword.text == "")
+        {
+            loginInfo.text = "Please enter a password";
+            return;
+        }
+
+        List<string> str = new List<string> { "AccountName", loginAccount.text, "Password", loginPassword.text };
         var payload = StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("login/trylogin", c);
