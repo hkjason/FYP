@@ -6,6 +6,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using Newtonsoft.Json;
 
 public class EXListManager : MonoBehaviour
 {
@@ -19,6 +20,19 @@ public class EXListManager : MonoBehaviour
     private Transform exListParent;
     [SerializeField]
     private GameObject exObject;
+
+    [Serializable]
+    public class ListDataRoot
+    {
+        public ListData root;
+    }
+
+    [Serializable]
+    public class ListData 
+    {
+        public string QUESTION_NAME;
+        public string DUEDATE;
+    }
 
     void Start()
     {
@@ -35,11 +49,18 @@ public class EXListManager : MonoBehaviour
 
     async void GetExList()
     {
-        var payload = "{\"userID\": " + LoginManager.UID + "}";
+        ////GET EX LIST from Server
+
+        //var payload = "{\"userID\": " + LoginManager.UID + "}";
+        var payload = "{\"userID\": 40}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getexlist", c);
         var content = await res.Content.ReadAsStringAsync();
-        Debug.Log("getexlist: " + content);
+        var test = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
+        //var test = JsonUtility.FromJson<ListData>(content);
+        Debug.Log("content: >>>>>>>>>>" + content);
+        Debug.Log("test: " + test);
+        Debug.Log("test.QUESTION_NAME: " + test.root.QUESTION_NAME);
     }
 
     void DisplayEx()

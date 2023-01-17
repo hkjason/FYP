@@ -84,14 +84,7 @@ public class LoginManager : MonoBehaviour
         var res = await client.PostAsync("login/trylogin", c);
         var content = await res.Content.ReadAsStringAsync();
 
-        if (string.Compare(content, "login successful") == 0)
-        {
-            loginInfo.text = "";
-            loginAccount.text = "";
-            loginPassword.text = "";
-            SceneManager.LoadScene(1);
-        }
-        else if (string.Compare(content, "incorrect password") == 0)
+        if (string.Compare(content, "incorrect password") == 0)
         {
             loginInfo.text = "Incorrect password";
             loginPassword.text = "";
@@ -104,8 +97,13 @@ public class LoginManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("LOGIN ERROR");
-            return;
+            //LOGIN SUCCESSFUL
+            UID = content;
+            Debug.Log(UID);
+            loginInfo.text = "";
+            loginAccount.text = "";
+            loginPassword.text = "";
+            SceneManager.LoadScene(1);
         }
     }
 

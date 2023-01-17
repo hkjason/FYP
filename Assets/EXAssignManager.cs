@@ -21,8 +21,22 @@ public class EXAssignManager : MonoBehaviour
     private TMP_InputField questionName;
     [SerializeField]
     private TMP_InputField questionInput;
+
+    [Space(5)]
+    [SerializeField]
+    private TMP_Text answerInputText;
     [SerializeField]
     private TMP_InputField answerInput;
+
+    [Space(5)]
+    [SerializeField]
+    private TMP_Text aText;
+    [SerializeField]
+    private TMP_Text bText;
+    [SerializeField]
+    private TMP_Text cText;
+    [SerializeField]
+    private TMP_Text dText;
     [SerializeField]
     private TMP_InputField aInput;
     [SerializeField]
@@ -101,9 +115,32 @@ public class EXAssignManager : MonoBehaviour
         switch (change.value)
         {
             case 0:
+                answerInput.gameObject.SetActive(false);
+                answerInputText.enabled = false;
 
+                aText.enabled = true;
+                bText.enabled = true;
+                cText.enabled = true;
+                dText.enabled = true;
+
+                aInput.gameObject.SetActive(true);
+                bInput.gameObject.SetActive(true);
+                cInput.gameObject.SetActive(true);
+                dInput.gameObject.SetActive(true);
                 break;
             case 1:
+                answerInput.gameObject.SetActive(true);
+                answerInputText.enabled = true;
+
+                aText.enabled = false;
+                bText.enabled = false;
+                cText.enabled = false;
+                dText.enabled = false;
+
+                aInput.gameObject.SetActive(false);
+                bInput.gameObject.SetActive(false);
+                cInput.gameObject.SetActive(false);
+                dInput.gameObject.SetActive(false);
                 break;
             default:
                 Debug.Log("Value error");
