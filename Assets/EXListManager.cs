@@ -24,11 +24,11 @@ public class EXListManager : MonoBehaviour
     [Serializable]
     public class ListDataRoot
     {
-        public ListData root;
+        public ListData[] root;
     }
-
+       
     [Serializable]
-    public class ListData 
+    public class ListData
     {
         public string QUESTION_NAME;
         public string DUEDATE;
@@ -40,7 +40,8 @@ public class EXListManager : MonoBehaviour
         client.BaseAddress = new Uri(URL);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        sortSelect.onValueChanged.AddListener(delegate {
+        sortSelect.onValueChanged.AddListener(delegate
+        {
             ChangeSort(sortSelect);
         });
 
@@ -52,23 +53,25 @@ public class EXListManager : MonoBehaviour
         ////GET EX LIST from Server
 
         //var payload = "{\"userID\": " + LoginManager.UID + "}";
-        var payload = "{\"userID\": 40}";
+        var payload = "{\"userID\": 41}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getexlist", c);
         var content = await res.Content.ReadAsStringAsync();
-        var test = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
-        //var test = JsonUtility.FromJson<ListData>(content);
-        Debug.Log("content: >>>>>>>>>>" + content);
-        Debug.Log("test: " + test);
-        Debug.Log("test.QUESTION_NAME: " + test.root.QUESTION_NAME);
+        //var test = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
+        print(content);
+        var data = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
+        DisplayEx(data);
     }
 
-    void DisplayEx()
+    void DisplayEx(ListDataRoot data)
     {
-        GameObject exObj = Instantiate(exObject, Vector3.zero, Quaternion.identity, exListParent);
-        TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
-        exArray[0].text = "ABC";
-        exArray[1].text = "TEST";
+        for(int i = 0; i< data.root.Length; i++) 
+        {
+            GameObject exObj = Instantiate(exObject, Vector3.zero, Quaternion.identity, exListParent);
+            TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
+            exArray[0].text = data.root[i].QUESTION_NAME;
+            exArray[1].text = data.root[i].DUEDATE;
+        }
     }
 
     void ChangeSort(TMP_Dropdown change)
