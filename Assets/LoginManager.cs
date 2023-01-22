@@ -13,35 +13,22 @@ public class LoginManager : MonoBehaviour
     private string URL = "http://localhost:3000";
     private HttpClient client;
 
-    [SerializeField]
-    private Button loginButton;
-    [SerializeField]
-    private Button regButton;
-    [SerializeField]
-    private TMP_InputField loginAccount;
-    [SerializeField]
-    private TMP_InputField loginPassword;
-    [SerializeField]
-    private TMP_InputField regAccount;
-    [SerializeField]
-    private TMP_InputField regPassword;
-    [SerializeField]
-    private TMP_InputField regConfirmPassword;
+    [SerializeField] private Button loginButton;
+    [SerializeField] private Button regButton;
+    [SerializeField] private TMP_InputField loginAccount;
+    [SerializeField] private TMP_InputField loginPassword;
+    [SerializeField] private TMP_InputField regAccount;
+    [SerializeField] private TMP_InputField regPassword;
+    [SerializeField] private TMP_InputField regConfirmPassword;
 
-    [SerializeField]
-    private TMP_Text loginInfo;
-    [SerializeField]
-    private TMP_Text regInfo;
+    [SerializeField] private TMP_Text loginInfo;
+    [SerializeField] private TMP_Text regInfo;
 
-    [SerializeField]
-    private GameObject loginPanel;
-    [SerializeField]
-    private GameObject regPanel;
+    [SerializeField] private GameObject loginPanel;
+    [SerializeField] private GameObject regPanel;
 
-    [SerializeField]
-    private Button noAccButton;
-    [SerializeField]
-    private Button loginNowButton;
+    [SerializeField] private Button noAccButton;
+    [SerializeField] private Button loginNowButton;
 
     public static string UID;
 
@@ -79,7 +66,7 @@ public class LoginManager : MonoBehaviour
         }
 
         List<string> str = new List<string> { "AccountName", loginAccount.text, "Password", loginPassword.text };
-        var payload = StringEncoder(str);
+        var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("login/trylogin", c);
         var content = await res.Content.ReadAsStringAsync();
@@ -118,7 +105,7 @@ public class LoginManager : MonoBehaviour
         }
 
         List<string> str = new List<string> { "AccountName", regAccount.text, "PassWord", regPassword.text };
-        var payload = StringEncoder(str);
+        var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("login/tryregister", c);
         var content = await res.Content.ReadAsStringAsync();
@@ -161,20 +148,5 @@ public class LoginManager : MonoBehaviour
         regConfirmPassword.text = "";
         regPanel.SetActive(false);
         loginPanel.SetActive(true);
-    }
-
-    string StringEncoder(List<string> list) 
-    {
-        string str = "";
-        str += "{";
-        for (int i = 0; i < list.Count - 1;) 
-        {
-            str += "\"" + list[i++] + "\": ";
-            str += "\"" + list[i++] + "\"";
-            if (i < list.Count - 1)
-                str += ", ";
-        }
-        str += "}";
-        return str;
     }
 }

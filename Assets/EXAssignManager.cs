@@ -13,40 +13,23 @@ public class EXAssignManager : MonoBehaviour
     private string URL = "http://localhost:3000";
     private HttpClient client;
 
-    [SerializeField]
-    private Button assignButton;
-    [SerializeField]
-    private TMP_Dropdown questionType;
-    [SerializeField]
-    private TMP_InputField questionName;
-    [SerializeField]
-    private TMP_InputField questionInput;
+    [SerializeField] private Button assignButton;
+    [SerializeField] private TMP_Dropdown questionType;
+    [SerializeField] private TMP_InputField questionName;
+    [SerializeField] private TMP_InputField questionInput;
 
     [Space(5)]
-    [SerializeField]
-    private TMP_Text answerInputText;
-    [SerializeField]
-    private TMP_InputField answerInput;
+    [SerializeField] private TMP_Text answerInputText;
+    [SerializeField] private TMP_InputField answerInput;
 
     [Space(5)]
-    [SerializeField]
-    private TMP_Text aText;
-    [SerializeField]
-    private TMP_Text bText;
-    [SerializeField]
-    private TMP_Text cText;
-    [SerializeField]
-    private TMP_Text dText;
-    [SerializeField]
-    private TMP_InputField aInput;
-    [SerializeField]
-    private TMP_InputField bInput;
-    [SerializeField]
-    private TMP_InputField cInput;
-    [SerializeField]
-    private TMP_InputField dInput;
-    [SerializeField]
-    private TMP_InputField dueDate;
+    [SerializeField] private TMP_Text currAnsText;
+    [SerializeField] private TMP_Text otherAnsText;
+    [SerializeField] private TMP_InputField aInput;
+    [SerializeField] private TMP_InputField bInput;
+    [SerializeField] private TMP_InputField cInput;
+    [SerializeField] private TMP_InputField dInput;
+    [SerializeField] private TMP_InputField dueDate;
 
     void Start()
     {
@@ -69,7 +52,7 @@ public class EXAssignManager : MonoBehaviour
         switch (questionType.value)
         {
             case 0:
-                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text, "duedate", dueDate.text};
+                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text, "answer", aInput.text, "duedate", dueDate.text};
                 break;
             case 1:
                 str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "1", "answer", answerInput.text, "duedate", dueDate.text};
@@ -118,10 +101,8 @@ public class EXAssignManager : MonoBehaviour
                 answerInput.gameObject.SetActive(false);
                 answerInputText.enabled = false;
 
-                aText.enabled = true;
-                bText.enabled = true;
-                cText.enabled = true;
-                dText.enabled = true;
+                currAnsText.enabled = true;
+                otherAnsText.enabled = true;
 
                 aInput.gameObject.SetActive(true);
                 bInput.gameObject.SetActive(true);
@@ -132,10 +113,8 @@ public class EXAssignManager : MonoBehaviour
                 answerInput.gameObject.SetActive(true);
                 answerInputText.enabled = true;
 
-                aText.enabled = false;
-                bText.enabled = false;
-                cText.enabled = false;
-                dText.enabled = false;
+                currAnsText.enabled = false;
+                otherAnsText.enabled = false;
 
                 aInput.gameObject.SetActive(false);
                 bInput.gameObject.SetActive(false);
