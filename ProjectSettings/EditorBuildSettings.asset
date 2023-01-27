@@ -6,16 +6,16 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/MainScene.unity
+    path: Assets/Scenes/MainScene.unity
     guid: 574132082e668e140936ca806d8daaf7
   - enabled: 1
-    path: Assets/EXAssign.unity
+    path: Assets/Scenes/EXAssign.unity
     guid: a3d82459d81fff148ac5128622c3d96d
   - enabled: 1
-    path: Assets/EXList.unity
+    path: Assets/Scenes/EXList.unity
     guid: c04a40b76ad53764f92705ac6e3a96a5
   - enabled: 1
-    path: Assets/EXComplete.unity
+    path: Assets/Scenes/EXReview.unity
     guid: f141820a63412bc41acf5553bf034f53
   m_configObjects:
     com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 31821cd667a9c344682d04d95a861f2a, type: 2}
