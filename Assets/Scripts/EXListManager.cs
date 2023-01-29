@@ -82,10 +82,11 @@ public class EXListManager : MonoBehaviour
         GetExList();
     }
 
+    //var payload = "{\"userID\": 41}";
+
     async void GetExList()
     {
-        //var payload = "{\"userID\": " + LoginManager.UID + "}";
-        var payload = "{\"userID\": 41}";
+        var payload = "{\"userID\": " + LoginManager.UID + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getexlist", c);
         var content = await res.Content.ReadAsStringAsync();
@@ -199,4 +200,5 @@ public class EXListManager : MonoBehaviour
                 break;
         }
     }
+
 }
