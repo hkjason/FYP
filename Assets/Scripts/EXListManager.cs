@@ -169,30 +169,36 @@ public class EXListManager : MonoBehaviour
         }
     }
 
+
     void McOnClick(int idx) 
     {
         
     }
+
+    //Temp
+    private TMP_Text displayText;
 
     async void SubmitAnswer()
     {
         switch (currentQuestionData.QUESTION_TYPE)
         {
             case "0":
-
                 break;
             case "1":
-                if (string.Compare(answerInput.text, currentQuestionData.ANSWER) == 0)
+                string answerStr = answerInput.text.Trim();
+
+                List<string> str = new List<string> { "eID", currentQuestionData.EXERCISE_ID, "uID", LoginManager.UID, "answer", answerStr };
+                var payload = ExtensionFunction.StringEncoder(str);
+                HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
+                await client.PostAsync("exercise/submitex", c);
+                //Better display to be implemented by UI
+                if (string.Compare(answerStr, currentQuestionData.ANSWER) == 0)
                 {
-                    List<string> str = new List<string> { "eID", currentQuestionData.EXERCISE_ID, "uID", LoginManager.UID, "answer", answerInput.text };
-                    var payload = ExtensionFunction.StringEncoder(str);
-                    HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-                    var res = await client.PostAsync("exercise/submitex", c);
-                    var content = await res.Content.ReadAsStringAsync();
+                    displayText.text = "Correct";
                 }
                 else
-                { 
-                
+                {
+                    displayText.text = "Incorrect";
                 }
                 break;
             default:
