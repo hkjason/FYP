@@ -82,11 +82,10 @@ public class EXListManager : MonoBehaviour
         GetExList();
     }
 
-    //var payload = "{\"userID\": 41}";
-
     async void GetExList()
     {
-        var payload = "{\"userID\": " + LoginManager.UID + "}";
+        //var payload = "{\"userID\": " + LoginManager.UID + "}";
+        var payload = "{\"userID\": 41}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getexlist", c);
         var content = await res.Content.ReadAsStringAsync();
@@ -102,6 +101,7 @@ public class EXListManager : MonoBehaviour
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
             exArray[0].text = data.root[i].QUESTION_NAME;
             exArray[1].text = data.root[i].DUEDATE;
+            Debug.Log(data.root[i].DUEDATE);
             Button btn = exObj.GetComponent<Button>();
             string eID = data.root[i].EXERCISE_ID;
             btn.onClick.AddListener(delegate { ExItemOnClick(eID); });
