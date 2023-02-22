@@ -100,8 +100,7 @@ public class EXListManager : MonoBehaviour
             GameObject exObj = Instantiate(exObject, Vector3.zero, Quaternion.identity, exListParent);
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
             exArray[0].text = data.root[i].QUESTION_NAME;
-            exArray[1].text = data.root[i].DUEDATE;
-            Debug.Log(data.root[i].DUEDATE);
+            exArray[1].text = data.root[i].DUEDATE.Substring(8, 2) + "/" + data.root[i].DUEDATE.Substring(5, 2);
             Button btn = exObj.GetComponent<Button>();
             string eID = data.root[i].EXERCISE_ID;
             btn.onClick.AddListener(delegate { ExItemOnClick(eID); });

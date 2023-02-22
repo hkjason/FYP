@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Text;
+using System.Text.RegularExpressions;
 
 public class EXAssignManager : MonoBehaviour
 {
@@ -44,6 +45,13 @@ public class EXAssignManager : MonoBehaviour
         questionType.onValueChanged.AddListener(delegate {
             ChangeType(questionType);
         });
+
+        dueDate.onValueChanged.AddListener(delegate { OnDateChanged(); });
+    }
+
+    private void Update()
+    {
+        dueDate.caretPosition = dueDate.text.Length;
     }
 
     async void OnAssign()
@@ -127,7 +135,32 @@ public class EXAssignManager : MonoBehaviour
         }
     }
 
-    void ResetMCValue() {
+    void OnDateChanged()
+    {
+        if (string.IsNullOrEmpty(dueDate.text))
+        {
+            dueDate.text = string.Empty;
+        }
+        else
+        {
+            string input = dueDate.text;
+            string MatchPattern = @"^((\d{2}-){0,2}(\d{1,2})?)$";
+            string ReplacementPattern = "$1-$3";
+            string ToReplacePattern = @"((\.?\d{2})+)(\d)";
+
+            input = Regex.Replace(input, ToReplacePattern, ReplacementPattern);
+            Match result = Regex.Match(input, MatchPattern);
+            if (result.Success)
+            {
+                dueDate.SetTextWithoutNotify(input);
+            }
+
+            dueDate.caretPosition = dueDate.text.Length;
+        }
+    }
+
+    void ResetMCValue() 
+    {
         questionInput.text = "";
         aInput.text = "";
         bInput.text = "";
@@ -135,7 +168,8 @@ public class EXAssignManager : MonoBehaviour
         dInput.text = "";
     }
 
-    void ResetSQValue() {
+    void ResetSQValue() 
+    {
         questionInput.text = "";
         answerInput.text = "";
     }
