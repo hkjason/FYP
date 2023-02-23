@@ -28,12 +28,17 @@ public class EXListManager : MonoBehaviour
 
     [Header("ExDisplay")]
     [SerializeField] private GameObject exDisplayParent;
+    [SerializeField] private TMP_Text exName;
     [SerializeField] private TMP_Text exQ;
     [SerializeField] private TMP_Text btnTextA;
     [SerializeField] private TMP_Text btnTextB;
     [SerializeField] private TMP_Text btnTextC;
     [SerializeField] private TMP_Text btnTextD;
     [SerializeField] private TMP_InputField answerInput;
+
+    [Space(5)]
+    [SerializeField] private GameObject sortBar;
+    [SerializeField] private Button exitExBtn;
 
     [Serializable]
     public class ListDataRoot
@@ -79,6 +84,8 @@ public class EXListManager : MonoBehaviour
         btnC.onClick.AddListener(delegate { McOnClick(2); });
         btnD.onClick.AddListener(delegate { McOnClick(3); });
 
+        exitExBtn.onClick.AddListener(delegate { ExitOnClick(); });
+
         GetExList();
     }
 
@@ -116,11 +123,17 @@ public class EXListManager : MonoBehaviour
         content = content.Substring(1, content.Length - 2);
         currentQuestionData = JsonUtility.FromJson<ListItem>(content);
 
+        exName.text = currentQuestionData.QUESTION_NAME;
         exQ.text = "Calculate:\n" + currentQuestionData.QUESTION;
+
+        sortBar.SetActive(false);
+        exListParent.gameObject.SetActive(false);
 
         switch (currentQuestionData.QUESTION_TYPE)
         {
             case "0":
+                answerInput.gameObject.SetActive(false);
+
                 List<string> suffleList = new List<string> { currentQuestionData.ANSWER_A, currentQuestionData.ANSWER_B, currentQuestionData.ANSWER_C, currentQuestionData.ANSWER_D };
 
                 for (int i = 0; i < suffleList.Count; i++)
@@ -142,7 +155,11 @@ public class EXListManager : MonoBehaviour
                 btnD.gameObject.SetActive(true);
                 break;
             case "1":
-                answerInput.enabled = true;
+                answerInput.gameObject.SetActive(true);
+                btnA.gameObject.SetActive(false);
+                btnB.gameObject.SetActive(false);
+                btnC.gameObject.SetActive(false);
+                btnD.gameObject.SetActive(false);
                 break;
             default:
                 Debug.Log("Value error");
@@ -172,6 +189,13 @@ public class EXListManager : MonoBehaviour
     void McOnClick(int idx) 
     {
         
+    }
+
+    void ExitOnClick()
+    {
+        sortBar.SetActive(true);
+        exListParent.gameObject.SetActive(true);
+        exDisplayParent.SetActive(false);
     }
 
     //Temp
