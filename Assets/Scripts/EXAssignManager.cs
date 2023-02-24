@@ -31,6 +31,12 @@ public class EXAssignManager : MonoBehaviour
     [SerializeField] private TMP_InputField cInput;
     [SerializeField] private TMP_InputField dInput;
     [SerializeField] private TMP_InputField dueDate;
+    [SerializeField] private TMP_InputField scheduleDate;
+
+    [Header("Toggle")]
+    [SerializeField] private Button toggleBtn;
+    [SerializeField] private GameObject toggleOn;
+    [SerializeField] private GameObject toggleOff;
 
     void Start()
     {
@@ -47,6 +53,7 @@ public class EXAssignManager : MonoBehaviour
         });
 
         dueDate.onValueChanged.AddListener(delegate { OnDateChanged(); });
+        toggleBtn.onClick.AddListener(OnToggle);
     }
 
     private void Update()
@@ -56,14 +63,20 @@ public class EXAssignManager : MonoBehaviour
 
     async void OnAssign()
     {
+        string scheduleReleaseDate = "";
+        if (toggleOn.activeSelf)
+        {
+            scheduleReleaseDate = scheduleDate.text;
+        }
+
         List<string> str = new List<string>();
         switch (questionType.value)
         {
             case 0:
-                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text, "answer", aInput.text, "duedate", dueDate.text};
+                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text, "answer", aInput.text, "duedate", dueDate.text, "scheduledate", scheduleReleaseDate};
                 break;
             case 1:
-                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "1", "answer", answerInput.text, "duedate", dueDate.text};
+                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "1", "answer", answerInput.text, "duedate", dueDate.text, "scheduledate", scheduleReleaseDate};
                 break;
             default:
                 Debug.Log("Value error");
@@ -157,6 +170,13 @@ public class EXAssignManager : MonoBehaviour
 
             dueDate.caretPosition = dueDate.text.Length;
         }
+    }
+
+    void OnToggle()
+    {
+        toggleOn.SetActive(!toggleOn.activeSelf);
+        toggleOff.SetActive(!toggleOff.activeSelf);
+        scheduleDate.gameObject.SetActive(!scheduleDate.gameObject.activeSelf);
     }
 
     void ResetMCValue() 
