@@ -651,7 +651,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 535d5068f6e6f4174a907fe1688dc8c1, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 362cdbc283a1c43a7abec33080b04398, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4990,6 +4990,8 @@ MonoBehaviour:
   answerInput: {fileID: 286126690}
   sortBar: {fileID: 482711899}
   exitExBtn: {fileID: 1336156646}
+  whiteBtnImg: {fileID: 21300000, guid: 535d5068f6e6f4174a907fe1688dc8c1, type: 3}
+  blueBtnImg: {fileID: 21300000, guid: 362cdbc283a1c43a7abec33080b04398, type: 3}
 --- !u!1 &2012728291
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,6 +13,7 @@ public class EXListManager : MonoBehaviour
     private HttpClient client;
 
     private ListItem currentQuestionData;
+    private int currentMcSelection = -1;
 
     [SerializeField] private TMP_Dropdown sortSelect;
 
@@ -39,6 +40,10 @@ public class EXListManager : MonoBehaviour
     [Space(5)]
     [SerializeField] private GameObject sortBar;
     [SerializeField] private Button exitExBtn;
+
+    [Space(5)]
+    [SerializeField] private Sprite whiteBtnImg;
+    [SerializeField] private Sprite blueBtnImg;
 
     [Serializable]
     public class ListDataRoot
@@ -116,6 +121,14 @@ public class EXListManager : MonoBehaviour
 
     async void ExItemOnClick(string eID) 
     {
+        //reset mc buttons
+        btnA.GetComponent<Image>().sprite = blueBtnImg;
+        btnB.GetComponent<Image>().sprite = blueBtnImg;
+        btnC.GetComponent<Image>().sprite = blueBtnImg;
+        btnD.GetComponent<Image>().sprite = blueBtnImg;
+        currentMcSelection = -1;
+
+
         var payload = "{\"eID\": " + eID + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getexdetails", c);
@@ -188,7 +201,34 @@ public class EXListManager : MonoBehaviour
 
     void McOnClick(int idx) 
     {
-        
+        btnA.GetComponent<Image>().sprite = blueBtnImg;
+        btnB.GetComponent<Image>().sprite = blueBtnImg;
+        btnC.GetComponent<Image>().sprite = blueBtnImg;
+        btnD.GetComponent<Image>().sprite = blueBtnImg;
+
+        if (currentMcSelection == idx)
+        {
+            currentMcSelection = -1;
+        }
+        else
+        {
+            currentMcSelection = idx;
+            switch (idx) 
+            {
+                case 0:
+                    btnA.GetComponent<Image>().sprite = whiteBtnImg;
+                    break;
+                case 1:
+                    btnB.GetComponent<Image>().sprite = whiteBtnImg;
+                    break;
+                case 2:
+                    btnC.GetComponent<Image>().sprite = whiteBtnImg;
+                    break;
+                case 3:
+                    btnD.GetComponent<Image>().sprite = whiteBtnImg;
+                    break;
+            }
+        }
     }
 
     void ExitOnClick()
