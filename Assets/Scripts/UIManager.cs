@@ -19,10 +19,20 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button menuButton;
     [SerializeField] private Button exerciseButton;
     [SerializeField] private Button reviewButton;
+    [SerializeField] private Button connectionButton;
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button feedbackButton;
     [SerializeField] private Button aboutButton;
     [SerializeField] private Button exitButton;
+
+    [Header("Exercise")]
+    [SerializeField] private GameObject exerciseListPanel;
+
+    [Header("Review")]
+    [SerializeField] private GameObject reviewPanel;
+
+    [Header("Connection")]
+    [SerializeField] private GameObject connectionPanel;
 
     [Header("Feedback")]
     [SerializeField] private GameObject feedbackPanel;
@@ -53,6 +63,12 @@ public class UIManager : MonoBehaviour
 
         menuButton.onClick.AddListener(MenuOnClick);
         menuVirtualBackground.onClick.AddListener(MenuOnClick);
+
+        exerciseButton.onClick.AddListener(ExerciseListPop);
+
+        reviewButton.onClick.AddListener(ReviewPop);
+
+        connectionButton.onClick.AddListener(ConnectionPop);
 
         feedbackButton.onClick.AddListener(FeedbackPop);
         feedbackSend.onClick.AddListener(FeedbackSend);
@@ -96,6 +112,25 @@ public class UIManager : MonoBehaviour
     {
         menu.DOMoveX(-280, 0.3f);
     }
+
+    void ExerciseListPop()
+    {
+        MenuOnClick();
+        exerciseListPanel.SetActive(true);
+    }
+
+    void ReviewPop()
+    {
+        MenuOnClick();
+        reviewPanel.SetActive(true);
+    }
+
+    void ConnectionPop()
+    {
+        MenuOnClick();
+        connectionPanel.SetActive(true);
+    }
+
 
     void FeedbackPop()
     {
