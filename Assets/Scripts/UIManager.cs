@@ -20,6 +20,7 @@ public class UIManager : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button menuButton;
     [SerializeField] private Button exerciseButton;
+    [SerializeField] private Button assignButton;
     [SerializeField] private Button reviewButton;
     [SerializeField] private Button connectionButton;
     [SerializeField] private Button settingsButton;
@@ -29,6 +30,9 @@ public class UIManager : MonoBehaviour
 
     [Header("Exercise")]
     [SerializeField] private GameObject exerciseListPanel;
+
+    [Header("Assign")]
+    [SerializeField] private GameObject assignPanel;
 
     [Header("Review")]
     [SerializeField] private GameObject reviewPanel;
@@ -69,6 +73,8 @@ public class UIManager : MonoBehaviour
 
         exerciseButton.onClick.AddListener(ExerciseListPop);
 
+        assignButton.onClick.AddListener(AssignPop);
+
         reviewButton.onClick.AddListener(ReviewPop);
 
         connectionButton.onClick.AddListener(ConnectionPop);
@@ -89,8 +95,18 @@ public class UIManager : MonoBehaviour
 
         usernameText.text = "User:\n" + Userdata.instance.USERNAME;
 
-        exerciseListPanel.SetActive(true);
-        topBarText.text = "Exercises";
+        if (Userdata.instance.ROLE_TYPE == 0)
+        {
+            assignButton.gameObject.SetActive(true);
+            assignPanel.SetActive(true);
+            topBarText.text = "Assign";
+        }
+        else
+        {
+            exerciseButton.gameObject.SetActive(true);
+            exerciseListPanel.SetActive(true);
+            topBarText.text = "Exercises";
+        }
     }
 
     void MenuOnClick()
@@ -123,17 +139,23 @@ public class UIManager : MonoBehaviour
 
     void ExerciseListPop()
     {
-        reviewPanel.SetActive(false);
-        connectionPanel.SetActive(false);
+        DisableFuncPanels();
         MenuOnClick();
         exerciseListPanel.SetActive(true);
         topBarText.text = "Exercises";
     }
 
+    void AssignPop()
+    {
+        DisableFuncPanels();
+        MenuOnClick();
+        assignPanel.SetActive(true);
+        topBarText.text = "Assign";
+    }
+
     void ReviewPop()
     {
-        exerciseListPanel.SetActive(false);
-        connectionPanel.SetActive(false);
+        DisableFuncPanels();
         MenuOnClick();
         reviewPanel.SetActive(true);
         topBarText.text = "Review";
@@ -141,11 +163,18 @@ public class UIManager : MonoBehaviour
 
     void ConnectionPop()
     {
-        exerciseListPanel.SetActive(false);
-        reviewPanel.SetActive(false);
+        DisableFuncPanels();
         MenuOnClick();
         connection.onChange();
         topBarText.text = "Connection";
+    }
+
+    void DisableFuncPanels()
+    {
+        exerciseListPanel.SetActive(false);
+        assignPanel.SetActive(false);
+        reviewPanel.SetActive(false);
+        connectionPanel.SetActive(false);
     }
 
     void FeedbackPop()
