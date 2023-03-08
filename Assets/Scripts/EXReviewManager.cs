@@ -41,7 +41,7 @@ public class EXReviewManager : MonoBehaviour
 
     async void GetReviewList()
     {
-        //var payload = "{\"uID\": " + LoginManager.UID + "}";
+        //var payload = "{\"uID\": " + Userdata.instance.UID + "}";
         var payload = "{\"uID\": 41}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getreviewlist", c);

@@ -73,10 +73,10 @@ public class EXAssignManager : MonoBehaviour
         switch (questionType.value)
         {
             case 0:
-                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text, "answer", aInput.text, "duedate", dueDate.text, "scheduledate", scheduleReleaseDate};
+                str = new List<string> { "userID", Userdata.instance.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "0", "answerA", aInput.text, "answerB", bInput.text, "answerC", cInput.text, "answerD", dInput.text, "answer", aInput.text, "duedate", dueDate.text, "scheduledate", scheduleReleaseDate};
                 break;
             case 1:
-                str = new List<string> { "userID", LoginManager.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "1", "answer", answerInput.text, "duedate", dueDate.text, "scheduledate", scheduleReleaseDate};
+                str = new List<string> { "userID", Userdata.instance.UID, "questionName", questionName.text,"question", questionInput.text, "questionType", "1", "answer", answerInput.text, "duedate", dueDate.text, "scheduledate", scheduleReleaseDate};
                 break;
             default:
                 Debug.Log("Value error");

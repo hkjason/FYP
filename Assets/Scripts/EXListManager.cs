@@ -96,7 +96,7 @@ public class EXListManager : MonoBehaviour
 
     async void GetExList()
     {
-        //var payload = "{\"userID\": " + LoginManager.UID + "}";
+        //var payload = "{\"userID\": " + Userdata.instance.UID + "}";
         var payload = "{\"userID\": 41}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getexlist", c);
@@ -250,7 +250,7 @@ public class EXListManager : MonoBehaviour
             case "1":
                 string answerStr = answerInput.text.Trim();
 
-                List<string> str = new List<string> { "eID", currentQuestionData.EXERCISE_ID, "uID", LoginManager.UID, "answer", answerStr };
+                List<string> str = new List<string> { "eID", currentQuestionData.EXERCISE_ID, "uID", Userdata.instance.UID, "answer", answerStr };
                 var payload = ExtensionFunction.StringEncoder(str);
                 HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
                 await client.PostAsync("exercise/submitex", c);

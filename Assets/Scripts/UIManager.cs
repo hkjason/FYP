@@ -14,6 +14,8 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private Transform menu;
     [SerializeField] private Button menuVirtualBackground;
+    [SerializeField] private TMP_Text topBarText;
+    [SerializeField] private TMP_Text usernameText;
 
     [Header("Buttons")]
     [SerializeField] private Button menuButton;
@@ -84,6 +86,11 @@ public class UIManager : MonoBehaviour
         exitDimed.onClick.AddListener(ExitNo);
         exitYes.onClick.AddListener(ExitYes);
         exitNo.onClick.AddListener(ExitNo);
+
+        usernameText.text = "User:\n" + Userdata.instance.USERNAME;
+
+        exerciseListPanel.SetActive(true);
+        topBarText.text = "Exercises";
     }
 
     void MenuOnClick()
@@ -120,6 +127,7 @@ public class UIManager : MonoBehaviour
         connectionPanel.SetActive(false);
         MenuOnClick();
         exerciseListPanel.SetActive(true);
+        topBarText.text = "Exercises";
     }
 
     void ReviewPop()
@@ -128,6 +136,7 @@ public class UIManager : MonoBehaviour
         connectionPanel.SetActive(false);
         MenuOnClick();
         reviewPanel.SetActive(true);
+        topBarText.text = "Review";
     }
 
     void ConnectionPop()
@@ -136,6 +145,7 @@ public class UIManager : MonoBehaviour
         reviewPanel.SetActive(false);
         MenuOnClick();
         connection.onChange();
+        topBarText.text = "Connection";
     }
 
     void FeedbackPop()

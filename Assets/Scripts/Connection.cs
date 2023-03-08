@@ -37,20 +37,31 @@ public class Connection : MonoBehaviour
         addButton.onClick.AddListener(AddOnClick);
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            NotiPop();
+        }
+        if (Input.GetKeyDown(KeyCode.K)) { 
+           
+        }
+    }
+
     public void onChange()
     {
         UnactivateAll();
 
         connectionPanel.SetActive(true);
 
-        if (LoginManager.ROLE_TYPE == 0) //Teacher
+        if (Userdata.instance.ROLE_TYPE == 0) //Teacher
         {
             titleText.text = "Get Connected";
             GetCode();
         }
         else 
         {
-            if (LoginManager.TEACHER_UID == "0")
+            if (Userdata.instance.TEACHER_UID == "0")
             {
                 titleText.text = "Get Connected";
                 notConnectedGO.SetActive(true);
@@ -65,7 +76,7 @@ public class Connection : MonoBehaviour
 
     async void GetCode()
     {
-        var payload = "{\"userID\": " + LoginManager.UID  + "}";
+        var payload = "{\"userID\": " + Userdata.instance.UID  + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("connection/getcode", c);
         var content = await res.Content.ReadAsStringAsync();
@@ -76,7 +87,7 @@ public class Connection : MonoBehaviour
 
     async void AddOnClick()
     {
-        var payload = "{\"userID\": " + LoginManager.UID + ", \"code\": " + connectionCodeInput.text + "}";
+        var payload = "{\"userID\": " + Userdata.instance.UID + ", \"code\": \"" + connectionCodeInput.text + "\"}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("connection/addconnection", c);
         var content = await res.Content.ReadAsStringAsync();
@@ -87,7 +98,7 @@ public class Connection : MonoBehaviour
         }
         else
         {
-            LoginManager.TEACHER_UID = content;
+            Userdata.instance.TEACHER_UID = content;
             connectionNotiText.text = "Connection Success!";
             NotiPop();
             onChange();
@@ -97,7 +108,7 @@ public class Connection : MonoBehaviour
     async void GetConnection()
     {
         //DisplayLoading
-        var payload = "{\"TUID\": " + LoginManager.TEACHER_UID + "}";
+        var payload = "{\"TUID\": " + Userdata.instance.TEACHER_UID + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("connection/getconnection", c);
         var content = await res.Content.ReadAsStringAsync();

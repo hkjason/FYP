@@ -42,13 +42,10 @@ public class LoginManager : MonoBehaviour
     public class UserData
     {
         public int USER_ID;
+        public string USERNAME;
         public int TEACHER_UID;
         public int TYPE;
     }
-
-    public static string UID;
-    public static string TEACHER_UID;
-    public static int ROLE_TYPE;
 
     void Start()
     {
@@ -65,15 +62,6 @@ public class LoginManager : MonoBehaviour
         btn.onClick.AddListener(NoAccOnClick);
         btn = loginNowButton.GetComponent<Button>();
         btn.onClick.AddListener(LoginNowOnClick);
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.J)) {
-            Debug.Log(UID);
-            Debug.Log(TEACHER_UID);
-            Debug.Log(ROLE_TYPE);
-        }
     }
 
     //PAYLOAD DEMO
@@ -113,14 +101,15 @@ public class LoginManager : MonoBehaviour
             //LOGIN SUCCESSFUL
             var data = JsonUtility.FromJson<UserDataRoot>("{\"root\":" + content + "}");
 
-            UID = data.root[0].USER_ID.ToString();
-            TEACHER_UID = data.root[0].TEACHER_UID.ToString();
-            ROLE_TYPE = data.root[0].TYPE;
+            Userdata.instance.UID = data.root[0].USER_ID.ToString();
+            Userdata.instance.USERNAME = data.root[0].USERNAME;
+            Userdata.instance.TEACHER_UID = data.root[0].TEACHER_UID.ToString();
+            Userdata.instance.ROLE_TYPE = data.root[0].TYPE;
 
             loginInfo.text = "";
             loginAccount.text = "";
             loginPassword.text = "";
-            //SceneManager.LoadScene(1);
+            SceneManager.LoadScene(1);
         }
     }
 
