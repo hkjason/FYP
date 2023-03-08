@@ -32,6 +32,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject reviewPanel;
 
     [Header("Connection")]
+    [SerializeField] private Connection connection;
     [SerializeField] private GameObject connectionPanel;
 
     [Header("Feedback")]
@@ -115,22 +116,27 @@ public class UIManager : MonoBehaviour
 
     void ExerciseListPop()
     {
+        reviewPanel.SetActive(false);
+        connectionPanel.SetActive(false);
         MenuOnClick();
         exerciseListPanel.SetActive(true);
     }
 
     void ReviewPop()
     {
+        exerciseListPanel.SetActive(false);
+        connectionPanel.SetActive(false);
         MenuOnClick();
         reviewPanel.SetActive(true);
     }
 
     void ConnectionPop()
     {
+        exerciseListPanel.SetActive(false);
+        reviewPanel.SetActive(false);
         MenuOnClick();
-        connectionPanel.SetActive(true);
+        connection.onChange();
     }
-
 
     void FeedbackPop()
     {
