@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
@@ -26,6 +27,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button feedbackButton;
     [SerializeField] private Button aboutButton;
+    [SerializeField] private Button logoutButton;
     [SerializeField] private Button exitButton;
 
     [Header("Exercise")]
@@ -53,6 +55,12 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject aboutPanel;
     [SerializeField] private Button aboutDimed;
     [SerializeField] private Button aboutExit;
+
+    [Header("Logout")]
+    [SerializeField] private GameObject logoutPanel;
+    [SerializeField] private Button logoutDimed;
+    [SerializeField] private Button logoutYes;
+    [SerializeField] private Button logoutNo;
 
     [Header("ExitApp")]
     [SerializeField] private GameObject exitPanel;
@@ -87,6 +95,11 @@ public class UIManager : MonoBehaviour
         aboutButton.onClick.AddListener(AboutPop);
         aboutDimed.onClick.AddListener(AboutExit);
         aboutExit.onClick.AddListener(AboutExit);
+
+        logoutButton.onClick.AddListener(LogoutPop);
+        logoutDimed.onClick.AddListener(LogoutNo);
+        logoutYes.onClick.AddListener(LogoutYes);
+        logoutNo.onClick.AddListener(LogoutNo);
 
         exitButton.onClick.AddListener(ExitPop);
         exitDimed.onClick.AddListener(ExitNo);
@@ -225,6 +238,26 @@ public class UIManager : MonoBehaviour
     void AboutExit()
     {
         aboutPanel.SetActive(false);
+    }
+
+    void LogoutPop()
+    {
+        MenuOnClick();
+        logoutPanel.SetActive(true);
+    }
+
+    void LogoutYes()
+    {
+        Userdata.instance.UID = "";
+        Userdata.instance.USERNAME = "";
+        Userdata.instance.TEACHER_UID = "";
+        Userdata.instance.ROLE_TYPE = 0;
+        SceneManager.LoadScene(0);
+    }
+
+    void LogoutNo()
+    {
+        logoutPanel.SetActive(false);
     }
 
     void ExitPop()

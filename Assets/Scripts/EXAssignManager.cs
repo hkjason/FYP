@@ -162,8 +162,8 @@ public class EXAssignManager : MonoBehaviour
         else
         {
             string input = dueDate.text;
-            string MatchPattern = @"^((\d{2}-){0,2}(\d{1,2})?)$";
-            string ReplacementPattern = "$1-$3";
+            string MatchPattern = @"^((\d{2}/){0,2}(\d{1,2})?)$";
+            string ReplacementPattern = "$1/$3";
             string ToReplacePattern = @"((\.?\d{2})+)(\d)";
 
             input = Regex.Replace(input, ToReplacePattern, ReplacementPattern);
@@ -175,6 +175,26 @@ public class EXAssignManager : MonoBehaviour
 
             dueDate.caretPosition = dueDate.text.Length;
         }
+    }
+
+    bool DateValidate(string date)
+    {
+        if (date.Length != 10) 
+        {
+            return false;
+        }
+
+        string[] strArray = date.Split('/');
+
+        int day = int.Parse(strArray[0]);
+        int month = int.Parse(strArray[1]);
+        int year = int.Parse(strArray[2]);
+
+        string str = "28/02/2023 23:59:59";
+        DateTime outDate;
+        Debug.Log(DateTime.TryParse(str, out outDate));
+
+        return false;
     }
 
     void OnToggle()
