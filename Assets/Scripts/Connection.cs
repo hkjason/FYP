@@ -37,17 +37,6 @@ public class Connection : MonoBehaviour
         addButton.onClick.AddListener(AddOnClick);
     }
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.J))
-        {
-            NotiPop();
-        }
-        if (Input.GetKeyDown(KeyCode.K)) { 
-           
-        }
-    }
-
     public void onChange()
     {
         UnactivateAll();
@@ -119,12 +108,12 @@ public class Connection : MonoBehaviour
     void NotiPop()
     {
         DOTween.Kill(connectionNoti);
-        connectionNoti.DOMoveY(-227, 0.3f).OnComplete(NotiUnpop);
+        connectionNoti.DOMoveY(1693, 0.3f).OnComplete(NotiUnpop);
     }
 
     void NotiUnpop()
     {
-        connectionNoti.DOMoveY(0, 0.3f).SetDelay(2);
+        connectionNoti.DOMoveY(1920, 0.3f).SetDelay(2);
     }
 
     void UnactivateAll()

@@ -14,6 +14,8 @@ public class EXAssignManager : MonoBehaviour
     private string URL = "http://localhost:3000";
     private HttpClient client;
 
+    [SerializeField] private GameObject assignGO;
+
     [SerializeField] private Button assignButton;
     [SerializeField] private TMP_Dropdown questionType;
     [SerializeField] private TMP_InputField questionName;
@@ -58,7 +60,10 @@ public class EXAssignManager : MonoBehaviour
 
     private void Update()
     {
-        dueDate.caretPosition = dueDate.text.Length;
+        if (assignGO.activeSelf)
+        {
+            dueDate.caretPosition = dueDate.text.Length;
+        }
     }
 
     async void OnAssign()

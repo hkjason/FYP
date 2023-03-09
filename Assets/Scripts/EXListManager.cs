@@ -91,7 +91,10 @@ public class EXListManager : MonoBehaviour
 
         exitExBtn.onClick.AddListener(delegate { ExitOnClick(); });
 
-        GetExList();
+        if (Userdata.instance.ROLE_TYPE == 1)
+        {
+            GetExList();
+        }
     }
 
     async void GetExList()
