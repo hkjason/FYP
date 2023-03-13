@@ -99,8 +99,7 @@ public class EXListManager : MonoBehaviour
 
     async void GetExList()
     {
-        //var payload = "{\"userID\": " + Userdata.instance.UID + "}";
-        var payload = "{\"userID\": 41}";
+        var payload = "{\"userID\": " + Userdata.instance.UID + ", \"teacherID\": " + Userdata.instance.TEACHER_UID +"}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         var res = await client.PostAsync("exercise/getexlist", c);
         var content = await res.Content.ReadAsStringAsync();

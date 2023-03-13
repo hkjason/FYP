@@ -68,6 +68,10 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button exitYes;
     [SerializeField] private Button exitNo;
 
+    [Header("Noti")]
+    [SerializeField] private Transform noti;
+    [SerializeField] private TMP_Text notiText;
+
     private bool menuState = false;
 
     void Start()
@@ -106,19 +110,21 @@ public class UIManager : MonoBehaviour
         exitYes.onClick.AddListener(ExitYes);
         exitNo.onClick.AddListener(ExitNo);
 
-        usernameText.text = "User:\n" + Userdata.instance.USERNAME;
+        usernameText.text = Userdata.instance.USERNAME;
 
         if (Userdata.instance.ROLE_TYPE == 0)
         {
             assignButton.gameObject.SetActive(true);
             assignPanel.SetActive(true);
-            topBarText.text = "Assign";
+            topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            topBarText.text = Localization.instance.GetLangNum() == 0 ? "Assign" : "分派";
         }
         else
         {
             exerciseButton.gameObject.SetActive(true);
             exerciseListPanel.SetActive(true);
-            topBarText.text = "Exercises";
+            topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            topBarText.text = Localization.instance.GetLangNum() == 0 ? "Exercises" : "練習";
         }
     }
 
@@ -155,7 +161,8 @@ public class UIManager : MonoBehaviour
         DisableFuncPanels();
         MenuOnClick();
         exerciseListPanel.SetActive(true);
-        topBarText.text = "Exercises";
+        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Exercises" : "練習";
     }
 
     void AssignPop()
@@ -163,7 +170,8 @@ public class UIManager : MonoBehaviour
         DisableFuncPanels();
         MenuOnClick();
         assignPanel.SetActive(true);
-        topBarText.text = "Assign";
+        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Assign" : "分派";
     }
 
     void ReviewPop()
@@ -171,7 +179,8 @@ public class UIManager : MonoBehaviour
         DisableFuncPanels();
         MenuOnClick();
         reviewPanel.SetActive(true);
-        topBarText.text = "Review";
+        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Review" : "檢閱";
     }
 
     void ConnectionPop()
@@ -179,7 +188,8 @@ public class UIManager : MonoBehaviour
         DisableFuncPanels();
         MenuOnClick();
         connection.onChange();
-        topBarText.text = "Connection";
+        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Connection" : "連接";
     }
 
     void DisableFuncPanels()
@@ -209,18 +219,20 @@ public class UIManager : MonoBehaviour
 
             if (string.Compare(content, "Feedback Success") == 0)
             {
-                feedbackInfo.text = "Feedback Success";
+                feedbackInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+                feedbackInfo.text = Localization.instance.GetLangNum() == 0 ? "Feedback Success" : "反饋成功";
             }
             else if (string.Compare(content, "Feedback Error") == 0)
             {
-                feedbackInfo.text = "Error, please try again later";
+                feedbackInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+                feedbackInfo.text = Localization.instance.GetLangNum() == 0 ? "Error, please try again later" : "錯誤，請稍後重試";
             }
-
             feedbackText.text = "";
         }
         else
         {
-            feedbackInfo.text = "Feedback cannot be empty";
+            feedbackInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            feedbackInfo.text = Localization.instance.GetLangNum() == 0 ? "Feedback cannot be empty" : "反饋不能為空";
         }
     }
 
@@ -274,5 +286,23 @@ public class UIManager : MonoBehaviour
     void ExitNo()
     {
         exitPanel.SetActive(false);
+    }
+
+    public void NotiSetText(string str1, string str2)
+    {
+        notiText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        notiText.text = Localization.instance.GetLangNum() == 0 ? str1 : str2;
+        NotiPop();
+    }
+
+    void NotiPop()
+    {
+        DOTween.Kill(noti);
+        noti.DOMoveY(1693, 0.3f).OnComplete(NotiUnpop);
+    }
+
+    void NotiUnpop()
+    {
+        noti.DOMoveY(1920, 0.3f).SetDelay(2);
     }
 }

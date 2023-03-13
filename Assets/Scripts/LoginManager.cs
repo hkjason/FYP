@@ -70,12 +70,14 @@ public class LoginManager : MonoBehaviour
     {
         if (loginAccount.text == "")
         {
-            loginInfo.text = "Please enter a username";
+            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter a username" : "請輸入帳戶名稱";
             return;
         }
         if (loginPassword.text == "")
         {
-            loginInfo.text = "Please enter a password";
+            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter a password" : "請輸入密碼";
             return;
         }
 
@@ -87,12 +89,14 @@ public class LoginManager : MonoBehaviour
 
         if (string.Compare(content, "Incorrect password") == 0)
         {
-            loginInfo.text = "Incorrect password";
+            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Incorrect password" : "密碼錯誤";
             loginPassword.text = "";
         }
         else if (string.Compare(content, "User not found") == 0)
         {
-            loginInfo.text = "User not found";
+            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "User not found" : "找不到用戶";
             loginAccount.text = "";
             loginPassword.text = "";
         }
@@ -118,31 +122,37 @@ public class LoginManager : MonoBehaviour
         //check empty
         if (regEmail.text == "")
         {
-            regInfo.text = "Please enter email";
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter email" : "請輸入電子郵件";
             return;
         }
 
         if (regAccount.text == "")
         {
-            regInfo.text = "Please enter username";
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter username" : "請輸入帳戶名稱";
             return;
         }
 
         if (regPassword.text == "")
         {
-            regInfo.text = "Please enter password";
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter password" : "請輸入密碼";
             return;
         }
 
         if (regConfirmPassword.text == "")
         {
-            regInfo.text = "Please enter confirm password";
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter confirm password" : "請輸入確認密碼";
             return;
         }
 
         if (!ValidEmail(regEmail.text))
         {
             regEmail.text = "";
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Invalid Email" : "無效的電子郵件";
             regInfo.text = "Invalid Email";
             return;
         }
@@ -151,7 +161,8 @@ public class LoginManager : MonoBehaviour
         {
             regPassword.text = "";
             regConfirmPassword.text = "";
-            regInfo.text = "Password not same";
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Password not same" : "密碼不一致";
             return;
         }
 
@@ -172,7 +183,8 @@ public class LoginManager : MonoBehaviour
         }
         else if (string.Compare(content, "username exists") == 0)
         {
-            regInfo.text = "Username exists";
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Username exists" : "用戶名已存在";
             regAccount.text = "";
             regPassword.text = "";
             regConfirmPassword.text = "";

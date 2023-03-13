@@ -16,17 +16,15 @@ public class Connection : MonoBehaviour
     [SerializeField] private GameObject connectedGO;
     [SerializeField] private GameObject notConnectedGO;
     [SerializeField] private GameObject teacherGO;
-    [SerializeField] private Transform connectionNoti;
 
     [SerializeField] private TMP_Text titleText;
-
-    [SerializeField] private TMP_Text connectionNotiText;
 
     [SerializeField] private TMP_Text connectionCode;
     [SerializeField] private TMP_InputField connectionCodeInput;
     [SerializeField] private Button addButton;
 
     [SerializeField] private TMP_Text connectedText;
+    [SerializeField] private UIManager uIManager;
 
     void Start()
     {
@@ -82,14 +80,12 @@ public class Connection : MonoBehaviour
         var content = await res.Content.ReadAsStringAsync();
         if (string.Compare(content, "CODE ERROR") == 0)
         {
-            connectionNotiText.text = "Code Error, Please try again.";
-            NotiPop();
+            uIManager.NotiSetText("Code Error, Please try again.", "代碼錯誤，請重試");
         }
         else
         {
             Userdata.instance.TEACHER_UID = content;
-            connectionNotiText.text = "Connection Success!";
-            NotiPop();
+            uIManager.NotiSetText("Connection Success!", "連接成功");
             onChange();
         }
     }
@@ -103,17 +99,6 @@ public class Connection : MonoBehaviour
         var content = await res.Content.ReadAsStringAsync();
         connectedText.text = "You are connected with teacher\n" + content;
         connectedGO.SetActive(true);
-    }
-
-    void NotiPop()
-    {
-        DOTween.Kill(connectionNoti);
-        connectionNoti.DOMoveY(1693, 0.3f).OnComplete(NotiUnpop);
-    }
-
-    void NotiUnpop()
-    {
-        connectionNoti.DOMoveY(1920, 0.3f).SetDelay(2);
     }
 
     void UnactivateAll()
