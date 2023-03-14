@@ -31,12 +31,14 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button exitButton;
 
     [Header("Exercise")]
+    [SerializeField] private EXListManager exListManager;
     [SerializeField] private GameObject exerciseListPanel;
 
     [Header("Assign")]
     [SerializeField] private GameObject assignPanel;
 
     [Header("Review")]
+    [SerializeField] private EXReviewManager exReviewManager;
     [SerializeField] private GameObject reviewPanel;
 
     [Header("Connection")]
@@ -160,7 +162,7 @@ public class UIManager : MonoBehaviour
     {
         DisableFuncPanels();
         MenuOnClick();
-        exerciseListPanel.SetActive(true);
+        exListManager.GetExList();
         topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Exercises" : "½m²ß";
     }
@@ -178,7 +180,7 @@ public class UIManager : MonoBehaviour
     {
         DisableFuncPanels();
         MenuOnClick();
-        reviewPanel.SetActive(true);
+        exReviewManager.GetReviewList();
         topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Review" : "ÀË¾\";
     }
@@ -298,11 +300,11 @@ public class UIManager : MonoBehaviour
     void NotiPop()
     {
         DOTween.Kill(noti);
-        noti.DOMoveY(1693, 0.3f).OnComplete(NotiUnpop);
+        noti.DOMoveY(1693, 0.2f).OnComplete(NotiUnpop);
     }
 
     void NotiUnpop()
     {
-        noti.DOMoveY(1920, 0.3f).SetDelay(2);
+        noti.DOMoveY(1920, 0.2f).SetDelay(2);
     }
 }

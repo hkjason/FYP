@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 public class EXAssignManager : MonoBehaviour
 {
@@ -42,9 +43,6 @@ public class EXAssignManager : MonoBehaviour
     [SerializeField] private Button saveNNext;
     [SerializeField] private Button assignButton;
 
-    [Header("Noti")]
-    [SerializeField] private Transform noti;
-    [SerializeField] private TMP_Text notiText;
     [SerializeField] private UIManager uiManager;
 
     //ExData
@@ -71,8 +69,8 @@ public class EXAssignManager : MonoBehaviour
 
         confirmBtn.onClick.AddListener(OnConfirm);
         assignButton.onClick.AddListener(OnAssign);
-        saveNNext.onClick.AddListener(OnSave);
         toggleBtn.onClick.AddListener(OnToggle);
+        saveNNext.onClick.AddListener(delegate { OnSave(); } );
 
         questionType.onValueChanged.AddListener(delegate { ChangeType(questionType); });
 
@@ -95,7 +93,10 @@ public class EXAssignManager : MonoBehaviour
 
     async void OnAssign()
     {
-        OnSave();
+        if (!OnSave())
+        {
+            return;
+        }
 
         string dataList = "{\"root\":[";
 
@@ -121,7 +122,7 @@ public class EXAssignManager : MonoBehaviour
             var dataStr = StringEncoder(str);
             dataList = dataList + dataStr;
         }
-        dataList = dataList + "], \"userID\": \""+ Userdata.instance.UID + "\", \"exName\": \"" + exNameData + "\", \"dueDate\": \"" + dueDateData + "\", \"scheduleDate\": \"" + scheduleData + "\"}";
+        dataList = dataList + "], \"userID\": \""+ Userdata.instance.UID + "\", \"exName\": \"" + exNameData + "\", \"dueDate\": \"" + ChangeToDate(dueDateData) + "\", \"scheduleDate\": \"" + ChangeToDate(scheduleData) + "\"}";
 
         Debug.Log(dataList);
 
@@ -140,34 +141,51 @@ public class EXAssignManager : MonoBehaviour
         }
     }
 
-    void OnSave()
+    string ChangeToDate(string dateStr)
+    {
+        if (string.Compare(dateStr, "") == 0)
+        {
+            return "";
+        }
+
+        string dateVal = "";
+        string day = dateStr.Substring(0, 2);
+        string month = dateStr.Substring(3, 2);
+        string year = dateStr.Substring(6, 4);
+        string time = dateStr.Substring(11, 8);
+
+        dateVal = dateVal + year + "-" + month + "-" + day + " " + time;
+        return dateVal;
+    }
+
+    bool OnSave()
     {
         if (string.Compare(questionInput.text, "") == 0)
         {
             uiManager.NotiSetText("Question cannot be empty", "問題不能為空");
-            return;
+            return false;
         }
         if (questionType.value == 0)
         {
             if (string.Compare(aInput.text, "") == 0)
             {
                 uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
-                return;
+                return false;
             }
             if (string.Compare(bInput.text, "") == 0)
             {
                 uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
-                return;
+                return false;
             }
             if (string.Compare(cInput.text, "") == 0)
             {
                 uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
-                return;
+                return false;
             }
             if (string.Compare(dInput.text, "") == 0)
             {
                 uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
-                return;
+                return false;
             }
         }
         if (questionType.value == 1)
@@ -175,7 +193,7 @@ public class EXAssignManager : MonoBehaviour
             if (string.Compare(answerInput.text, "") == 0)
             {
                 uiManager.NotiSetText("Answer cannot be empty", "答案不能為空");
-                return;
+                return false;
             }
         }
 
@@ -199,7 +217,7 @@ public class EXAssignManager : MonoBehaviour
                 break;
             default:
                 Debug.Log("Value error");
-                break;
+                return false;
         }
 
         questionDataList.Add(questionData);
@@ -214,8 +232,10 @@ public class EXAssignManager : MonoBehaviour
                 break;
             default:
                 Debug.Log("Value error");
-                break;
+                return false;
         }
+
+        return true;
     }
 
     void ChangeType(TMP_Dropdown change) 
