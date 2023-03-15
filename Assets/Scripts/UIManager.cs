@@ -216,7 +216,16 @@ public class UIManager : MonoBehaviour
         {
             var payload = "{\"feedbacktext\": \"" + feedbackText.text + "\"}";
             HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-            var res = await client.PostAsync("feedback/sendfeedback", c);
+            HttpResponseMessage res;
+            try
+            {
+                res = await client.PostAsync("feedback/sendfeedback", c);
+            }
+            catch (HttpRequestException e)
+            {
+                NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+                return;
+            }
             var content = await res.Content.ReadAsStringAsync();
 
             if (string.Compare(content, "Feedback Success") == 0)

@@ -64,8 +64,6 @@ public class LoginManager : MonoBehaviour
         btn.onClick.AddListener(LoginNowOnClick);
     }
 
-    //PAYLOAD DEMO
-    //var payload = "{\"CustomerId\": 5,\"CustomerName\": \"Pepsi\"}";
     async void LoginOnClick()
     {
         if (loginAccount.text == "")
@@ -84,7 +82,17 @@ public class LoginManager : MonoBehaviour
         List<string> str = new List<string> { "AccountName", loginAccount.text, "Password", loginPassword.text };
         var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("login/trylogin", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("login/trylogin", c);
+        }
+        catch (HttpRequestException e)
+        {
+            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Connection failure, please check network connection or server" : "連接失敗，請檢查網絡連接或伺服器";
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
 
         if (string.Compare(content, "Incorrect password") == 0)
@@ -169,7 +177,17 @@ public class LoginManager : MonoBehaviour
         List<string> str = new List<string> { "AccountName", regAccount.text, "PassWord", regPassword.text };
         var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("login/tryregister", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("login/tryregister", c);
+        }
+        catch (HttpRequestException e)
+        {
+            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Connection failure, please check network connection or server" : "連接失敗，請檢查網絡連接或伺服器";
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
 
         if (string.Compare(content, "register successful") == 0)

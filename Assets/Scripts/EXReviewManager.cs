@@ -15,6 +15,7 @@ public class EXReviewManager : MonoBehaviour
     [SerializeField] private GameObject reviewObject;
     [SerializeField] private Transform reviewListParent;
     [SerializeField] private GameObject reviewListPanel;
+    [SerializeField] private UIManager uIManager;
 
     private int questionIdx = 0;
     private ReviewItemRoot questionList;
@@ -98,7 +99,16 @@ public class EXReviewManager : MonoBehaviour
 
         var payload = "{\"userID\": " + Userdata.instance.UID + ", \"teacherID\": " + Userdata.instance.TEACHER_UID + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("exercise/getreviewlist", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("exercise/getreviewlist", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
         var data = JsonUtility.FromJson<ReviewListDataRoot>("{\"root\":" + content + "}");
         DisplayList(data);
@@ -123,7 +133,16 @@ public class EXReviewManager : MonoBehaviour
         questionIdx = 0;
         var payload = "{\"uID\": " + Userdata.instance.UID + ", \"eID\": " + eID + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("exercise/getreviewdetail", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("exercise/getreviewdetail", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
         questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
         QuestionDisplay();

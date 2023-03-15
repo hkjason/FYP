@@ -43,7 +43,7 @@ public class EXAssignManager : MonoBehaviour
     [SerializeField] private Button saveNNext;
     [SerializeField] private Button assignButton;
 
-    [SerializeField] private UIManager uiManager;
+    [SerializeField] private UIManager uIManager;
 
     //ExData
     private string exNameData ="";
@@ -127,12 +127,21 @@ public class EXAssignManager : MonoBehaviour
         Debug.Log(dataList);
 
         HttpContent c = new StringContent(dataList, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("exercise/assignex", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("exercise/assignex", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
 
         if (string.Compare(content, "assign successful") == 0)
         {
-            uiManager.NotiSetText("Assign Successful", "分派成功");
+            uIManager.NotiSetText("Assign Successful", "分派成功");
         }
         else
         {
@@ -162,29 +171,29 @@ public class EXAssignManager : MonoBehaviour
     {
         if (string.Compare(questionInput.text, "") == 0)
         {
-            uiManager.NotiSetText("Question cannot be empty", "問題不能為空");
+            uIManager.NotiSetText("Question cannot be empty", "問題不能為空");
             return false;
         }
         if (questionType.value == 0)
         {
             if (string.Compare(aInput.text, "") == 0)
             {
-                uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
+                uIManager.NotiSetText("Option cannot be empty", "選項不能為空");
                 return false;
             }
             if (string.Compare(bInput.text, "") == 0)
             {
-                uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
+                uIManager.NotiSetText("Option cannot be empty", "選項不能為空");
                 return false;
             }
             if (string.Compare(cInput.text, "") == 0)
             {
-                uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
+                uIManager.NotiSetText("Option cannot be empty", "選項不能為空");
                 return false;
             }
             if (string.Compare(dInput.text, "") == 0)
             {
-                uiManager.NotiSetText("Option cannot be empty", "選項不能為空");
+                uIManager.NotiSetText("Option cannot be empty", "選項不能為空");
                 return false;
             }
         }
@@ -192,7 +201,7 @@ public class EXAssignManager : MonoBehaviour
         {
             if (string.Compare(answerInput.text, "") == 0)
             {
-                uiManager.NotiSetText("Answer cannot be empty", "答案不能為空");
+                uIManager.NotiSetText("Answer cannot be empty", "答案不能為空");
                 return false;
             }
         }
@@ -309,19 +318,19 @@ public class EXAssignManager : MonoBehaviour
     {
         if (string.Compare(exerciseName.text, "") == 0)
         {
-            uiManager.NotiSetText("Exercise Name cannot be empty", "練習名稱不能為空");
+            uIManager.NotiSetText("Exercise Name cannot be empty", "練習名稱不能為空");
             return;
         }
         if (string.Compare(dueDate.text, "") == 0)
         {
-            uiManager.NotiSetText("Duedate cannot be empty", "截止日期不能為空");
+            uIManager.NotiSetText("Duedate cannot be empty", "截止日期不能為空");
             return;
         }
         if (toggleOn.activeSelf)
         {
             if (string.Compare(scheduleDate.text, "") == 0)
             {
-                uiManager.NotiSetText("Schedule date cannot be empty", "發布日期不能為空");
+                uIManager.NotiSetText("Schedule date cannot be empty", "發布日期不能為空");
                 return;
             }
             if (DateValidate(scheduleDate.text + " 00:00:00"))
@@ -330,7 +339,7 @@ public class EXAssignManager : MonoBehaviour
             }
             else
             {
-                uiManager.NotiSetText("Invalid date", "無效的日期");
+                uIManager.NotiSetText("Invalid date", "無效的日期");
                 return;
             }
         }
@@ -345,7 +354,7 @@ public class EXAssignManager : MonoBehaviour
         }
         else
         {
-            uiManager.NotiSetText("Invalid date", "無效的日期");
+            uIManager.NotiSetText("Invalid date", "無效的日期");
             return;
         }
 

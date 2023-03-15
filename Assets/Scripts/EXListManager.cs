@@ -49,7 +49,7 @@ public class EXListManager : MonoBehaviour
     private int currentMcSelection = -1;
 
     [SerializeField] private Button nextBtn;
-    [SerializeField] private UIManager uiManager;
+    [SerializeField] private UIManager uIManager;
 
     public List<QuestionRecord> questionRecordList = new List<QuestionRecord>();
     public class QuestionRecord
@@ -152,7 +152,16 @@ public class EXListManager : MonoBehaviour
         questionRecordList = new List<QuestionRecord>();
         var payload = "{\"eID\": " + eID + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("exercise/getexdetails", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("exercise/getexdetails", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
         questionList = JsonUtility.FromJson<ListItemRoot>("{\"root\":" + content + "}");
         QuestionDisplay();
@@ -292,14 +301,14 @@ public class EXListManager : MonoBehaviour
             case "0":
                 if (currentMcSelection == -1)
                 {
-                    uiManager.NotiSetText("Please select an option", "請選擇一個選項");
+                    uIManager.NotiSetText("Please select an option", "請選擇一個選項");
                     return false;
                 }
                 break;
             case "1":
                 if (string.Compare(answerInput.text, "") == 0)
                 {
-                    uiManager.NotiSetText("Please enter answer", "請輸入答案");
+                    uIManager.NotiSetText("Please enter answer", "請輸入答案");
                     return false;
                 }
                 break;
@@ -361,7 +370,7 @@ public class EXListManager : MonoBehaviour
 
         if (string.Compare(content, "submit successful") == 0)
         {
-            uiManager.NotiSetText("Submit Successful", "提交成功");
+            uIManager.NotiSetText("Submit Successful", "提交成功");
         }
         else
         {

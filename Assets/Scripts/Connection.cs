@@ -65,7 +65,17 @@ public class Connection : MonoBehaviour
     {
         var payload = "{\"userID\": " + Userdata.instance.UID  + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("connection/getcode", c);
+        HttpResponseMessage res;
+        try 
+        {
+            res = await client.PostAsync("connection/getcode", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
+
         var content = await res.Content.ReadAsStringAsync();
         connectionCode.text = "Please ask students to enter the following code to connect.\n\n" + content;
         teacherGO.SetActive(true);
@@ -76,7 +86,16 @@ public class Connection : MonoBehaviour
     {
         var payload = "{\"userID\": " + Userdata.instance.UID + ", \"code\": \"" + connectionCodeInput.text + "\"}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("connection/addconnection", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("connection/addconnection", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
         if (string.Compare(content, "CODE ERROR") == 0)
         {
@@ -95,7 +114,16 @@ public class Connection : MonoBehaviour
         //DisplayLoading
         var payload = "{\"TUID\": " + Userdata.instance.TEACHER_UID + "}";
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("connection/getconnection", c);
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("connection/getconnection", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
         connectedText.text = "You are connected with teacher\n" + content;
         connectedGO.SetActive(true);

@@ -11596,7 +11596,7 @@ MonoBehaviour:
   answerInput: {fileID: 141572500}
   saveNNext: {fileID: 1369367685}
   assignButton: {fileID: 1782046645}
-  uiManager: {fileID: 819257644}
+  uIManager: {fileID: 819257644}
 --- !u!4 &812409751
 Transform:
   m_ObjectHideFlags: 0
@@ -14300,6 +14300,7 @@ MonoBehaviour:
   reviewObject: {fileID: 3134761267430682167, guid: 994ccaa22cdd0954983e6a4e06f0ac93, type: 3}
   reviewListParent: {fileID: 540821089}
   reviewListPanel: {fileID: 1355082356}
+  uIManager: {fileID: 819257644}
   reviewDisplayParent: {fileID: 1273499737}
   exName: {fileID: 1955641148}
   exQ: {fileID: 610259303}
@@ -24971,7 +24972,7 @@ MonoBehaviour:
   whiteBtnImg: {fileID: 21300000, guid: 535d5068f6e6f4174a907fe1688dc8c1, type: 3}
   blueBtnImg: {fileID: 21300000, guid: 362cdbc283a1c43a7abec33080b04398, type: 3}
   nextBtn: {fileID: 2130919036}
-  uiManager: {fileID: 819257644}
+  uIManager: {fileID: 819257644}
 --- !u!1 &1995257112
 GameObject:
   m_ObjectHideFlags: 0
