@@ -180,7 +180,7 @@ public class UIManager : MonoBehaviour
     {
         DisableFuncPanels();
         MenuOnClick();
-        exReviewManager.GetReviewList();
+        exReviewManager.StartReview();
         topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Review" : "ÀË¾\";
     }

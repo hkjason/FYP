@@ -66,6 +66,7 @@ public class LoginManager : MonoBehaviour
 
     async void LoginOnClick()
     {
+        loginInfo.text = "";
         if (loginAccount.text == "")
         {
             loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
@@ -127,6 +128,7 @@ public class LoginManager : MonoBehaviour
 
     async void RegOnClick()
     {
+        regInfo.text = "";
         //check empty
         if (regEmail.text == "")
         {
@@ -158,10 +160,10 @@ public class LoginManager : MonoBehaviour
 
         if (!ValidEmail(regEmail.text))
         {
+            Debug.Log(regEmail.text);
             regEmail.text = "";
             regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
             regInfo.text = Localization.instance.GetLangNum() == 0 ? "Invalid Email" : "無效的電子郵件";
-            regInfo.text = "Invalid Email";
             return;
         }
 
@@ -174,7 +176,7 @@ public class LoginManager : MonoBehaviour
             return;
         }
 
-        List<string> str = new List<string> { "AccountName", regAccount.text, "PassWord", regPassword.text };
+        List<string> str = new List<string> { "AccountName", regAccount.text, "PassWord", regPassword.text, "Email", regEmail.text};
         var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
@@ -196,6 +198,8 @@ public class LoginManager : MonoBehaviour
             regAccount.text = "";
             regPassword.text = "";
             regConfirmPassword.text = "";
+            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Registration success" : "註冊成功";
             regPanel.SetActive(false);
             loginPanel.SetActive(true);
         }
@@ -206,7 +210,6 @@ public class LoginManager : MonoBehaviour
             regAccount.text = "";
             regPassword.text = "";
             regConfirmPassword.text = "";
-            loginInfo.text = "";
         }
         else
         {

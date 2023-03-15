@@ -30,6 +30,7 @@ public class EXReviewManager : MonoBehaviour
     [SerializeField] private Button nextBtn;
     [SerializeField] private Button previousBtn;
     [SerializeField] private Button exitExBtn;
+    [SerializeField] private GameObject sqAnsGO;
 
     [Header("McImages")]
     [SerializeField] private Image mcImageA;
@@ -45,6 +46,12 @@ public class EXReviewManager : MonoBehaviour
     [SerializeField] private Sprite greenBtnImg;
     [SerializeField] private Sprite redBtnImg;
     [SerializeField] private Sprite blueBtnImg;
+
+    [Header("Teacher Review")]
+    [SerializeField] private Button stuResBtn;
+    [SerializeField] private Transform listParent;
+    [SerializeField] private GameObject listPanel;
+    [SerializeField] private GameObject stuObject;
 
     [Serializable]
     public class ReviewListDataRoot
@@ -68,6 +75,7 @@ public class EXReviewManager : MonoBehaviour
     [Serializable]
     public class ReviewItem
     {
+        public string QUESTION_ID;
         public string QUESTION;
         public string QUESTION_TYPE;
         public string CORRECT_ANSWER;
@@ -75,6 +83,33 @@ public class EXReviewManager : MonoBehaviour
         public string ANSWER_C;
         public string ANSWER_D;
         public string ANSWER;
+    }
+    [Serializable]
+    public class TeacherReviewListDataRoot
+    {
+        public TeacherReviewListData[] root;
+    }
+
+    [Serializable]
+    public class TeacherReviewListData
+    {
+        public string EXERCISE_ID;
+        public string EXERCISE_NAME;
+        public string DUEDATE;
+    }
+
+    [Serializable]
+    public class ResultItemRoot
+    {
+        public ResultItem[] root;
+    }
+
+    [Serializable]
+    public class ResultItem
+    {
+        public string STUDENT;
+        public string ANSWER;
+        public string COMPLETION_TIME;
     }
 
     void Start()
@@ -86,9 +121,23 @@ public class EXReviewManager : MonoBehaviour
         nextBtn.onClick.AddListener(NextReview);
         previousBtn.onClick.AddListener(PreviousReview);
         exitExBtn.onClick.AddListener(ExitOnClick);
+
+        stuResBtn.onClick.AddListener(ReviewStudentResult);
     }
 
-    public async void GetReviewList()
+    public void StartReview()
+    {
+        if (Userdata.instance.ROLE_TYPE == 0)
+        {
+            GetTeacherReviewList();
+        }
+        else
+        {
+            GetReviewList();
+        }
+    }
+
+    async void GetReviewList()
     {
         while (reviewListParent.childCount > 0)
         {
@@ -110,6 +159,7 @@ public class EXReviewManager : MonoBehaviour
             return;
         }
         var content = await res.Content.ReadAsStringAsync();
+        Debug.Log("Content: "+ content);
         var data = JsonUtility.FromJson<ReviewListDataRoot>("{\"root\":" + content + "}");
         DisplayList(data);
     }
@@ -150,6 +200,15 @@ public class EXReviewManager : MonoBehaviour
 
     void QuestionDisplay()
     {
+        if (Userdata.instance.ROLE_TYPE == 0)
+        {
+            stuResBtn.gameObject.SetActive(true);
+        }
+        else
+        {
+            stuResBtn.gameObject.SetActive(false);
+        }
+
         reviewListParent.gameObject.SetActive(false);
 
         previousBtn.gameObject.SetActive(!(questionIdx == 0));
@@ -200,7 +259,16 @@ public class EXReviewManager : MonoBehaviour
                 mcImageC.gameObject.SetActive(false);
                 mcImageD.gameObject.SetActive(false);
                 corrAnsText.text = "Correct Answer: " + questionList.root[questionIdx].CORRECT_ANSWER;
-                yourAnsText.text = "Your Answer: " + questionList.root[questionIdx].ANSWER;
+                if (Userdata.instance.ROLE_TYPE == 0)
+                {
+                    sqAnsGO.SetActive(false);
+                }
+                else
+                {
+                    sqAnsGO.SetActive(true);
+                    yourAnsText.text = "Your Answer: " + questionList.root[questionIdx].ANSWER;
+                }
+
                 break;
             default:
                 Debug.Log("Value error");
@@ -210,8 +278,114 @@ public class EXReviewManager : MonoBehaviour
         reviewDisplayParent.SetActive(true);
     }
 
+    async void ReviewStudentResult()
+    {
+        if (listPanel.activeSelf)
+        {
+            listPanel.SetActive(false);
+            return;
+        }
+
+        var payload = "{\"qID\": " + questionList.root[questionIdx].QUESTION_ID + "}";
+        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("exercise/getstudentperformance", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
+        var content = await res.Content.ReadAsStringAsync();
+        Debug.Log("Content: " + content);
+        var data = JsonUtility.FromJson<ResultItemRoot>("{\"root\":" + content + "}");
+        DisplayStudentResult(data);
+    }
+
+    void DisplayStudentResult(ResultItemRoot data)
+    {
+        listPanel.SetActive(true);
+        while (listParent.childCount > 0)
+        {
+            DestroyImmediate(listParent.GetChild(0).gameObject);
+        }
+        for (int i = 0; i < data.root.Length; i++)
+        {
+            GameObject exObj = Instantiate(stuObject, Vector3.zero, Quaternion.identity, listParent);
+            TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
+            exArray[0].text = "Student: " + data.root[i].STUDENT;
+            exArray[1].text = "Answer: " + data.root[i].ANSWER;
+            exArray[2].text = data.root[i].COMPLETION_TIME.Substring(8, 2) + "/" + data.root[i].COMPLETION_TIME.Substring(5, 2);
+        }
+    }
+
+    async void GetTeacherReviewList()
+    {
+        while (reviewListParent.childCount > 0)
+        {
+            DestroyImmediate(reviewListParent.GetChild(0).gameObject);
+        }
+
+        reviewListPanel.SetActive(true);
+
+        var payload = "{\"uID\": " + Userdata.instance.UID + "}";
+        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("exercise/getteacherreviewlist", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
+        var content = await res.Content.ReadAsStringAsync();
+        Debug.Log("Content: " + content);
+        var data = JsonUtility.FromJson<TeacherReviewListDataRoot>("{\"root\":" + content + "}");
+        DisplayTeacherList(data);
+    }
+
+    void DisplayTeacherList(TeacherReviewListDataRoot data)
+    {
+        for (int i = 0; i < data.root.Length; i++)
+        {
+            GameObject exObj = Instantiate(reviewObject, Vector3.zero, Quaternion.identity, reviewListParent);
+            TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
+            exArray[0].text = data.root[i].EXERCISE_NAME;
+            exArray[1].text = data.root[i].DUEDATE.Substring(8, 2) + "/" + data.root[i].DUEDATE.Substring(5, 2);
+            Button btn = exObj.GetComponent<Button>();
+            string eID = data.root[i].EXERCISE_ID;
+            btn.onClick.AddListener(delegate { TeacherExItemOnClick(eID); });
+        }
+    }
+
+    async void TeacherExItemOnClick(string eID)
+    {
+        questionIdx = 0;
+        var payload = "{\"eID\": " + eID + "}";
+        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
+        HttpResponseMessage res;
+        try
+        {
+            res = await client.PostAsync("exercise/getteacherreviewdetail", c);
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            return;
+        }
+        var content = await res.Content.ReadAsStringAsync();
+        questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
+        QuestionDisplay();
+    }
+
+
     void ExitOnClick()
     {
+        listPanel.SetActive(false);
         reviewListParent.gameObject.SetActive(true);
         reviewDisplayParent.SetActive(false);
     }
