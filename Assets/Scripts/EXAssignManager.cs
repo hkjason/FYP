@@ -27,8 +27,10 @@ public class EXAssignManager : MonoBehaviour
     [SerializeField] private Button confirmBtn;
 
     [Header("Assign")]
+    private int questionIdx = 0;
     [SerializeField] private GameObject assignGO;
     [Space(5)]
+    [SerializeField] private TMP_Text questionNameText;
     [SerializeField] private TMP_Dropdown questionType;
     [SerializeField] private TMP_InputField questionInput;
     [SerializeField] private TMP_Text currAnsText;
@@ -42,6 +44,7 @@ public class EXAssignManager : MonoBehaviour
     [Space(5)]
     [SerializeField] private Button saveNNext;
     [SerializeField] private Button assignButton;
+    [SerializeField] private Button backBtn;
 
     [SerializeField] private UIManager uIManager;
 
@@ -71,9 +74,9 @@ public class EXAssignManager : MonoBehaviour
         assignButton.onClick.AddListener(OnAssign);
         toggleBtn.onClick.AddListener(OnToggle);
         saveNNext.onClick.AddListener(delegate { OnSave(); } );
+        backBtn.onClick.AddListener(AssignBackOnClick);
 
         questionType.onValueChanged.AddListener(delegate { ChangeType(questionType); });
-
 
         dueDate.onValueChanged.AddListener(delegate { OnDateChanged(dueDate); });
         scheduleDate.onValueChanged.AddListener(delegate { OnDateChanged(scheduleDate); });
@@ -130,11 +133,14 @@ public class EXAssignManager : MonoBehaviour
         HttpResponseMessage res;
         try
         {
+            uIManager.Loading();
             res = await client.PostAsync("exercise/assignex", c);
+            uIManager.DoneLoading();
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            uIManager.DoneLoading();
             return;
         }
         var content = await res.Content.ReadAsStringAsync();
@@ -142,6 +148,7 @@ public class EXAssignManager : MonoBehaviour
         if (string.Compare(content, "assign successful") == 0)
         {
             uIManager.NotiSetText("Assign Successful", "分派成功");
+            AssignBackOnClick();
         }
         else
         {
@@ -230,6 +237,7 @@ public class EXAssignManager : MonoBehaviour
         }
 
         questionDataList.Add(questionData);
+        questionIdx++;
 
         switch (questionType.value)
         {
@@ -243,7 +251,7 @@ public class EXAssignManager : MonoBehaviour
                 Debug.Log("Value error");
                 return false;
         }
-
+        questionNameText.text = "Question: " + (questionIdx + 1);
         return true;
     }
 
@@ -339,7 +347,7 @@ public class EXAssignManager : MonoBehaviour
             }
             else
             {
-                uIManager.NotiSetText("Invalid date", "無效的日期");
+                uIManager.NotiSetText("Invalid schedule date", "無效的發布日期");
                 return;
             }
         }
@@ -354,14 +362,36 @@ public class EXAssignManager : MonoBehaviour
         }
         else
         {
-            uIManager.NotiSetText("Invalid date", "無效的日期");
+            uIManager.NotiSetText("Invalid due date", "無效的截止日期");
             return;
         }
-
+        DateTime dueDateTime = DateTime.Parse(dueDate.text + " 23:59:59");
+        if (DateTime.Compare(dueDateTime, DateTime.Now) < 0)
+        {
+            uIManager.NotiSetText("Due date cannot be earlier than today", "截止日期不能早於今天");
+            return;
+        }
+        if (toggleOn.activeSelf)
+        {
+            DateTime scheduleDateTime = DateTime.Parse(scheduleDate.text + " 00:00:00");
+            if (DateTime.Compare(scheduleDateTime, DateTime.Now) < 0)
+            {
+                uIManager.NotiSetText("Schedule date cannot be earlier than today", "發布日期不能早於今天");
+                return;
+            }
+            if (DateTime.Compare(dueDateTime, scheduleDateTime) < 0)
+            {
+                uIManager.NotiSetText("Due date cannot be earlier than schedule date", "截止日期不能早於發布日期");
+                return;
+            }
+        }
+        questionDataList = new List<QuestionData>();
+        questionIdx = 0;
         exNameData = exerciseName.text;
 
         ResetPreAssignValue();
 
+        questionNameText.text = "Question: " + (questionIdx + 1);
         preAssignGO.SetActive(false);
         assignGO.SetActive(true);
     }
@@ -375,6 +405,7 @@ public class EXAssignManager : MonoBehaviour
 
     void ResetPreAssignValue()
     {
+
         exerciseName.text = "";
         dueDate.text = "";
         scheduleDate.text = "";
@@ -396,6 +427,18 @@ public class EXAssignManager : MonoBehaviour
     {
         questionInput.text = "";
         answerInput.text = "";
+    }
+
+    public void ExitAssign()
+    {
+        preAssignGO.SetActive(false);
+        assignGO.SetActive(false);
+    }
+
+    void AssignBackOnClick()
+    {
+        preAssignGO.SetActive(true);
+        assignGO.SetActive(false);
     }
 
     string StringEncoder(List<string> list)

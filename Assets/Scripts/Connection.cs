@@ -3,6 +3,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,7 +36,7 @@ public class Connection : MonoBehaviour
         addButton.onClick.AddListener(AddOnClick);
     }
 
-    public void onChange()
+    public void OnChange()
     {
         UnactivateAll();
 
@@ -68,11 +69,14 @@ public class Connection : MonoBehaviour
         HttpResponseMessage res;
         try 
         {
+            uIManager.Loading();
             res = await client.PostAsync("connection/getcode", c);
+            uIManager.DoneLoading();
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            uIManager.DoneLoading();
             return;
         }
 
@@ -89,11 +93,14 @@ public class Connection : MonoBehaviour
         HttpResponseMessage res;
         try
         {
+            uIManager.Loading();
             res = await client.PostAsync("connection/addconnection", c);
+            uIManager.DoneLoading();
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            uIManager.DoneLoading();
             return;
         }
         var content = await res.Content.ReadAsStringAsync();
@@ -105,7 +112,7 @@ public class Connection : MonoBehaviour
         {
             Userdata.instance.TEACHER_UID = content;
             uIManager.NotiSetText("Connection Success!", "連接成功");
-            onChange();
+            OnChange();
         }
     }
 
@@ -117,11 +124,14 @@ public class Connection : MonoBehaviour
         HttpResponseMessage res;
         try
         {
+            uIManager.Loading();
             res = await client.PostAsync("connection/getconnection", c);
+            uIManager.DoneLoading();
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            uIManager.DoneLoading();
             return;
         }
         var content = await res.Content.ReadAsStringAsync();

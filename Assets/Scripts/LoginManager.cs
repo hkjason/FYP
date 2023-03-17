@@ -18,6 +18,7 @@ public class LoginManager : MonoBehaviour
     [SerializeField] private Button regButton;
     [SerializeField] private TMP_InputField loginAccount;
     [SerializeField] private TMP_InputField loginPassword;
+    [SerializeField] private TMP_Dropdown regDropdown;
     [SerializeField] private TMP_InputField regEmail;
     [SerializeField] private TMP_InputField regAccount;
     [SerializeField] private TMP_InputField regPassword;
@@ -31,6 +32,8 @@ public class LoginManager : MonoBehaviour
 
     [SerializeField] private Button noAccButton;
     [SerializeField] private Button loginNowButton;
+
+    [SerializeField] private GameObject loadingGO;
 
     [Serializable]
     public class UserDataRoot
@@ -53,15 +56,10 @@ public class LoginManager : MonoBehaviour
         client.BaseAddress = new Uri(URL);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        Button btn;
-        btn = loginButton.GetComponent<Button>();
-        btn.onClick.AddListener(LoginOnClick);
-        btn = regButton.GetComponent<Button>();
-        btn.onClick.AddListener(RegOnClick);
-        btn = noAccButton.GetComponent<Button>();
-        btn.onClick.AddListener(NoAccOnClick);
-        btn = loginNowButton.GetComponent<Button>();
-        btn.onClick.AddListener(LoginNowOnClick);
+        loginButton.onClick.AddListener(LoginOnClick);
+        regButton.onClick.AddListener(RegOnClick);
+        noAccButton.onClick.AddListener(NoAccOnClick);
+        loginNowButton.onClick.AddListener(LoginNowOnClick);
     }
 
     async void LoginOnClick()
@@ -86,10 +84,13 @@ public class LoginManager : MonoBehaviour
         HttpResponseMessage res;
         try
         {
+            Loading();
             res = await client.PostAsync("login/trylogin", c);
+            DoneLoading();
         }
         catch (HttpRequestException e)
         {
+            DoneLoading();
             loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
             loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Connection failure, please check network connection or server" : "連接失敗，請檢查網絡連接或伺服器";
             return;
@@ -176,16 +177,19 @@ public class LoginManager : MonoBehaviour
             return;
         }
 
-        List<string> str = new List<string> { "AccountName", regAccount.text, "PassWord", regPassword.text, "Email", regEmail.text};
+        List<string> str = new List<string> { "AccountName", regAccount.text, "PassWord", regPassword.text, "Email", regEmail.text, "Role", regDropdown.value.ToString()};
         var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
+            Loading();
             res = await client.PostAsync("login/tryregister", c);
+            DoneLoading();
         }
         catch (HttpRequestException e)
         {
+            DoneLoading();
             regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
             regInfo.text = Localization.instance.GetLangNum() == 0 ? "Connection failure, please check network connection or server" : "連接失敗，請檢查網絡連接或伺服器";
             return;
@@ -198,6 +202,7 @@ public class LoginManager : MonoBehaviour
             regAccount.text = "";
             regPassword.text = "";
             regConfirmPassword.text = "";
+            regEmail.text = "";
             loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
             loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Registration success" : "註冊成功";
             regPanel.SetActive(false);
@@ -242,5 +247,15 @@ public class LoginManager : MonoBehaviour
         regConfirmPassword.text = "";
         regPanel.SetActive(false);
         loginPanel.SetActive(true);
+    }
+
+    void Loading()
+    {
+        loadingGO.SetActive(true);
+    }
+
+    void DoneLoading()
+    {
+        loadingGO.SetActive(false);
     }
 }

@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using UnityEngine.UI;
+using System.Linq;
 
 public class EXListManager : MonoBehaviour
 {
@@ -36,7 +37,6 @@ public class EXListManager : MonoBehaviour
     [SerializeField] private TMP_InputField answerInput;
 
     [Space(5)]
-    [SerializeField] private GameObject sortBar;
     [SerializeField] private Button exitExBtn;
 
     [Space(5)]
@@ -52,6 +52,7 @@ public class EXListManager : MonoBehaviour
     [SerializeField] private UIManager uIManager;
 
     public List<QuestionRecord> questionRecordList = new List<QuestionRecord>();
+    private ListDataRoot exListData = new ListDataRoot();
     public class QuestionRecord
     {
         public string questionId = "";
@@ -100,14 +101,14 @@ public class EXListManager : MonoBehaviour
         nextBtn.onClick.AddListener(NextQuestion);
         submitButton.onClick.AddListener(SubmitAnswer);
 
-        sortSelect.onValueChanged.AddListener( delegate{ ChangeSort(sortSelect);});
+        sortSelect.onValueChanged.AddListener(delegate { DisplayEx(); });
 
         btnA.onClick.AddListener(delegate { McOnClick(0); });
         btnB.onClick.AddListener(delegate { McOnClick(1); });
         btnC.onClick.AddListener(delegate { McOnClick(2); });
         btnD.onClick.AddListener(delegate { McOnClick(3); });
 
-        exitExBtn.onClick.AddListener(delegate { ExitOnClick(); });
+        exitExBtn.onClick.AddListener(ExitOnClick);
 
         if (Userdata.instance.ROLE_TYPE == 1)
         {
@@ -118,30 +119,57 @@ public class EXListManager : MonoBehaviour
     public async void GetExList()
     {
         exListPanel.SetActive(true);
+
+        var payload = "{\"userID\": " + Userdata.instance.UID + ", \"teacherID\": " + Userdata.instance.TEACHER_UID +"}";
+        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
+        HttpResponseMessage res;
+        try
+        {
+            uIManager.Loading();
+            res = await client.PostAsync("exercise/getexlist", c);
+            uIManager.DoneLoading();
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            uIManager.DoneLoading();
+            return;
+        }
+        var content = await res.Content.ReadAsStringAsync();
+        exListData = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
+        DisplayEx();
+    }
+
+    void DisplayEx()
+    {
+        switch (sortSelect.value)
+        {
+            case 0:
+                exListData.root = exListData.root.OrderBy(x => x.DUEDATE).ToArray();
+                break;
+            case 1:
+                exListData.root = exListData.root.OrderBy(x => x.EXERCISE_NAME).ToArray();
+                break;
+            case 2:
+                exListData.root = exListData.root.OrderByDescending(x => x.DUEDATE).ToArray();
+                break;
+            case 3:
+                exListData.root = exListData.root.OrderByDescending(x => x.EXERCISE_NAME).ToArray();
+                break;
+        }
         while (exListParent.childCount > 0)
         {
             DestroyImmediate(exListParent.GetChild(0).gameObject);
         }
 
-
-        var payload = "{\"userID\": " + Userdata.instance.UID + ", \"teacherID\": " + Userdata.instance.TEACHER_UID +"}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("exercise/getexlist", c);
-        var content = await res.Content.ReadAsStringAsync();
-        var data = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
-        DisplayEx(data);
-    }
-
-    void DisplayEx(ListDataRoot data)
-    {
-        for(int i = 0; i< data.root.Length; i++) 
+        for(int i = 0; i< exListData.root.Length; i++) 
         {
             GameObject exObj = Instantiate(exObject, Vector3.zero, Quaternion.identity, exListParent);
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
-            exArray[0].text = data.root[i].EXERCISE_NAME;
-            exArray[1].text = data.root[i].DUEDATE.Substring(8, 2) + "/" + data.root[i].DUEDATE.Substring(5, 2);
+            exArray[0].text = exListData.root[i].EXERCISE_NAME;
+            exArray[1].text = exListData.root[i].DUEDATE.Substring(8, 2) + "/" + exListData.root[i].DUEDATE.Substring(5, 2);
             Button btn = exObj.GetComponent<Button>();
-            string eID = data.root[i].EXERCISE_ID;
+            string eID = exListData.root[i].EXERCISE_ID;
             btn.onClick.AddListener(delegate { ExItemOnClick(eID); });
         }
     }
@@ -155,11 +183,14 @@ public class EXListManager : MonoBehaviour
         HttpResponseMessage res;
         try
         {
+            uIManager.Loading();
             res = await client.PostAsync("exercise/getexdetails", c);
+            uIManager.DoneLoading();
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            uIManager.DoneLoading();
             return;
         }
         var content = await res.Content.ReadAsStringAsync();
@@ -185,8 +216,7 @@ public class EXListManager : MonoBehaviour
             submitButton.gameObject.SetActive(false);
         }
 
-        sortBar.SetActive(false);
-        exListParent.gameObject.SetActive(false);
+        exListPanel.SetActive(false);
         //reset mc buttons
         btnA.GetComponent<Image>().sprite = blueBtnImg;
         btnB.GetComponent<Image>().sprite = blueBtnImg;
@@ -236,22 +266,6 @@ public class EXListManager : MonoBehaviour
         }
 
         exDisplayParent.SetActive(true);
-    }
-
-    void ChangeSort(TMP_Dropdown change)
-    {
-        switch (change.value)
-        {
-            case 0:
-
-                break;
-            case 1:
-
-                break;
-            default:
-                Debug.Log("Value error");
-                break;
-        }
     }
 
     void McOnClick(int idx) 
@@ -334,8 +348,13 @@ public class EXListManager : MonoBehaviour
 
     void ExitOnClick()
     {
-        sortBar.SetActive(true);
-        exListParent.gameObject.SetActive(true);
+        exListPanel.SetActive(true);
+        exDisplayParent.SetActive(false);
+    }
+
+    public void ExitEx()
+    {
+        exListPanel.SetActive(false);
         exDisplayParent.SetActive(false);
     }
 
@@ -365,16 +384,30 @@ public class EXListManager : MonoBehaviour
         Debug.Log(dataList);
 
         HttpContent c = new StringContent(dataList, Encoding.UTF8, "application/json");
-        var res = await client.PostAsync("exercise/submitex", c);
+        HttpResponseMessage res;
+        try
+        {
+            uIManager.Loading();
+            res = await client.PostAsync("exercise/submitex", c);
+            uIManager.DoneLoading();
+        }
+        catch (HttpRequestException e)
+        {
+            uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
+            uIManager.DoneLoading();
+            return;
+        }
         var content = await res.Content.ReadAsStringAsync();
 
         if (string.Compare(content, "submit successful") == 0)
         {
             uIManager.NotiSetText("Submit Successful", "提交成功");
+            ExitOnClick();
+            GetExList();
         }
         else
         {
-            Debug.Log("ASSIGN ERROR");
+            Debug.Log("SUBMIT ERROR");
             return;
         }
     }

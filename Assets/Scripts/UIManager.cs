@@ -36,10 +36,10 @@ public class UIManager : MonoBehaviour
 
     [Header("Assign")]
     [SerializeField] private GameObject assignPanel;
+    [SerializeField] private EXAssignManager exAssignManager;
 
     [Header("Review")]
     [SerializeField] private EXReviewManager exReviewManager;
-    [SerializeField] private GameObject reviewPanel;
 
     [Header("Connection")]
     [SerializeField] private Connection connection;
@@ -73,6 +73,8 @@ public class UIManager : MonoBehaviour
     [Header("Noti")]
     [SerializeField] private Transform noti;
     [SerializeField] private TMP_Text notiText;
+
+    [SerializeField] private GameObject loadingGO;
 
     private bool menuState = false;
 
@@ -153,7 +155,7 @@ public class UIManager : MonoBehaviour
         menu.DOMoveX(280, 0.3f);
     }
 
-    void MenuUnpop() 
+    void MenuUnpop()
     {
         menu.DOMoveX(-280, 0.3f);
     }
@@ -189,16 +191,16 @@ public class UIManager : MonoBehaviour
     {
         DisableFuncPanels();
         MenuOnClick();
-        connection.onChange();
+        connection.OnChange();
         topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Connection" : "連接";
     }
 
     void DisableFuncPanels()
     {
-        exerciseListPanel.SetActive(false);
-        assignPanel.SetActive(false);
-        reviewPanel.SetActive(false);
+        exListManager.ExitEx();
+        exAssignManager.ExitAssign();
+        exReviewManager.ExitReview();
         connectionPanel.SetActive(false);
     }
 
@@ -245,6 +247,16 @@ public class UIManager : MonoBehaviour
             feedbackInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
             feedbackInfo.text = Localization.instance.GetLangNum() == 0 ? "Feedback cannot be empty" : "反饋不能為空";
         }
+    }
+
+    public void Loading()
+    {
+        loadingGO.SetActive(true);
+    }
+
+    public void DoneLoading()
+    {
+        loadingGO.SetActive(false);
     }
 
     void FeedbackExit()
