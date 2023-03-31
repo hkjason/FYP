@@ -16,7 +16,7 @@ public class LocalizationS1 : MonoBehaviour
     [SerializeField] private TMP_Text exerciseBtnText;
     [SerializeField] private TMP_Text assignBtnText;
     [SerializeField] private TMP_Text reviewBtnText;
-    [SerializeField] private TMP_Text connectionBtnText;
+    [SerializeField] private TMP_Text courseBtnText;
     [SerializeField] private TMP_Text settingsBtnText;
     [SerializeField] private TMP_Text feedbackBtnText;
     [SerializeField] private TMP_Text aboutBtnText;
@@ -59,7 +59,7 @@ public class LocalizationS1 : MonoBehaviour
                 exerciseBtnText.font = engFont;
                 assignBtnText.font = engFont;
                 reviewBtnText.font = engFont;
-                connectionBtnText.font = engFont;
+                courseBtnText.font = engFont;
                 settingsBtnText.font = engFont;
                 feedbackBtnText.font = engFont;
                 aboutBtnText.font = engFont;
@@ -70,7 +70,7 @@ public class LocalizationS1 : MonoBehaviour
                 exerciseBtnText.text = "Exercises";
                 assignBtnText.text = "Assign";
                 reviewBtnText.text = "Review";
-                connectionBtnText.text = "Connection";
+                courseBtnText.text = "Courses";
                 settingsBtnText.text = "Settings";
                 feedbackBtnText.text = "Feedback";
                 aboutBtnText.text = "About";
@@ -109,7 +109,7 @@ public class LocalizationS1 : MonoBehaviour
                 exerciseBtnText.font = chiFont;
                 assignBtnText.font = chiFont;
                 reviewBtnText.font = chiFont;
-                connectionBtnText.font = chiFont;
+                courseBtnText.font = chiFont;
                 settingsBtnText.font = chiFont;
                 feedbackBtnText.font = chiFont;
                 aboutBtnText.font = chiFont;
@@ -120,7 +120,7 @@ public class LocalizationS1 : MonoBehaviour
                 exerciseBtnText.text = "練習";
                 assignBtnText.text = "分派";
                 reviewBtnText.text = "檢閱";
-                connectionBtnText.text = "連接";
+                courseBtnText.text = "課程";
                 settingsBtnText.text = "設置";
                 feedbackBtnText.text = "反饋";
                 aboutBtnText.text = "關於";
@@ -176,7 +176,7 @@ public class LocalizationS1 : MonoBehaviour
                 break;
             case "Connection":case "連接":
                 topBarText.font = langNum == 0 ? engFont : chiFont;
-                topBarText.text = langNum == 0 ? "Connection" : "連接";
+                topBarText.text = langNum == 0 ? "Courses" : "課程";
                 break;
             default:
                 Debug.Log("ERROR");

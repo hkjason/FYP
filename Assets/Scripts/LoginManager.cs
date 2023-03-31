@@ -8,10 +8,13 @@ using TMPro;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using System.Text.RegularExpressions;
+using DG.Tweening;
+using System.Net;
 
 public class LoginManager : MonoBehaviour
 {
-    private string URL = "http://localhost:3000";
+    private string URL = "https://mongoserver-1-y3258239.deta.app/";
+    //private string URL = "http://localhost:3000";
     private HttpClient client;
 
     [SerializeField] private Button loginButton;
@@ -24,9 +27,6 @@ public class LoginManager : MonoBehaviour
     [SerializeField] private TMP_InputField regPassword;
     [SerializeField] private TMP_InputField regConfirmPassword;
 
-    [SerializeField] private TMP_Text loginInfo;
-    [SerializeField] private TMP_Text regInfo;
-
     [SerializeField] private GameObject loginPanel;
     [SerializeField] private GameObject regPanel;
 
@@ -35,25 +35,23 @@ public class LoginManager : MonoBehaviour
 
     [SerializeField] private GameObject loadingGO;
 
-    [Serializable]
-    public class UserDataRoot
-    {
-        public UserData[] root;
-    }
+    [Header("Noti")]
+    [SerializeField] private Transform noti;
+    [SerializeField] private TMP_Text notiText;
 
     [Serializable]
     public class UserData
     {
-        public int USER_ID;
-        public string USERNAME;
-        public int TEACHER_UID;
-        public int TYPE;
+        public int userId;
+        public string username;
+        public int role;
     }
 
     void Start()
     {
         client = new HttpClient();
         client.BaseAddress = new Uri(URL);
+        client.DefaultRequestHeaders.Add("x-api-key", "c0pPE1CyrvbW_keBnGfJuxJfKr2HAPB3T3U6zCF2JcR4e");
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         loginButton.onClick.AddListener(LoginOnClick);
@@ -64,17 +62,14 @@ public class LoginManager : MonoBehaviour
 
     async void LoginOnClick()
     {
-        loginInfo.text = "";
         if (loginAccount.text == "")
         {
-            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter a username" : "請輸入帳戶名稱";
+            NotiSetText("Please enter a username", "請輸入帳戶名稱");
             return;
         }
         if (loginPassword.text == "")
         {
-            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter a password" : "請輸入密碼";
+            NotiSetText("Please enter a password", "請輸入密碼");
             return;
         }
 
@@ -85,141 +80,141 @@ public class LoginManager : MonoBehaviour
         try
         {
             Loading();
-            res = await client.PostAsync("login/trylogin", c);
-            DoneLoading();
+            res = await client.PostAsync("login/login", c);
         }
         catch (HttpRequestException e)
         {
-            DoneLoading();
-            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Connection failure, please check network connection or server" : "連接失敗，請檢查網絡連接或伺服器";
+            NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
             return;
         }
+        finally
+        {
+            DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-
-        if (string.Compare(content, "Incorrect password") == 0)
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
         {
-            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Incorrect password" : "密碼錯誤";
-            loginPassword.text = "";
+            NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
         }
-        else if (string.Compare(content, "User not found") == 0)
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
         {
-            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "User not found" : "找不到用戶";
-            loginAccount.text = "";
-            loginPassword.text = "";
+            if (string.Compare(content, "User not found.") == 0)
+            {
+                NotiSetText("User not found", "找不到用戶");
+                return;
+            }
+            else if (string.Compare(content, "Incorrect password.") == 0)
+            {
+                NotiSetText("Incorrect password", "密碼錯誤");
+                return;
+            }
+            else
+            {
+                NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
         }
-        else
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
-            //LOGIN SUCCESSFUL
-            var data = JsonUtility.FromJson<UserDataRoot>("{\"root\":" + content + "}");
-
-            Userdata.instance.UID = data.root[0].USER_ID.ToString();
-            Userdata.instance.USERNAME = data.root[0].USERNAME;
-            Userdata.instance.TEACHER_UID = data.root[0].TEACHER_UID.ToString();
-            Userdata.instance.ROLE_TYPE = data.root[0].TYPE;
-
-            loginInfo.text = "";
-            loginAccount.text = "";
-            loginPassword.text = "";
+            var data = JsonUtility.FromJson<UserData>(content);
+            UserManager.instance.UID = data.userId.ToString();
+            UserManager.instance.USERNAME = data.username;
+            UserManager.instance.ROLE_TYPE = data.role;
             SceneManager.LoadScene(1);
         }
     }
 
     async void RegOnClick()
     {
-        regInfo.text = "";
         //check empty
         if (regEmail.text == "")
         {
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter email" : "請輸入電子郵件";
+            NotiSetText("Please enter email", "請輸入電子郵件");
             return;
         }
 
         if (regAccount.text == "")
         {
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter username" : "請輸入帳戶名稱";
+            NotiSetText("Please enter username", "請輸入帳戶名稱");
             return;
         }
 
         if (regPassword.text == "")
         {
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter password" : "請輸入密碼";
+            NotiSetText("Please enter password", "請輸入密碼");
             return;
         }
 
         if (regConfirmPassword.text == "")
         {
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Please enter confirm password" : "請輸入確認密碼";
+            NotiSetText("Please enter confirm password", "請輸入確認密碼");
             return;
         }
 
         if (!ValidEmail(regEmail.text))
         {
-            Debug.Log(regEmail.text);
-            regEmail.text = "";
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Invalid Email" : "無效的電子郵件";
+            NotiSetText("Invalid Email", "無效的電子郵件");
             return;
         }
 
         if (string.Compare(regPassword.text, regConfirmPassword.text) != 0)
         {
-            regPassword.text = "";
-            regConfirmPassword.text = "";
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Password not same" : "密碼不一致";
+            NotiSetText("Password not same", "密碼不一致");
             return;
         }
 
-        List<string> str = new List<string> { "AccountName", regAccount.text, "PassWord", regPassword.text, "Email", regEmail.text, "Role", regDropdown.value.ToString()};
+        List<string> str = new List<string> { "AccountName", regAccount.text, "Password", regPassword.text, "Email", regEmail.text, "Role", regDropdown.value.ToString()};
         var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             Loading();
-            res = await client.PostAsync("login/tryregister", c);
-            DoneLoading();
+            res = await client.PostAsync("login/", c);
         }
         catch (HttpRequestException e)
         {
-            DoneLoading();
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Connection failure, please check network connection or server" : "連接失敗，請檢查網絡連接或伺服器";
+            NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
             return;
         }
-        var content = await res.Content.ReadAsStringAsync();
-
-        if (string.Compare(content, "register successful") == 0)
+        finally
         {
-            regInfo.text = "";
+            DoneLoading();
+        }
+        var content = await res.Content.ReadAsStringAsync();
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "username exists.") == 0)
+            {
+                NotiSetText("Username exists", "用戶名已存在");
+                return;
+            }
+            else if (string.Compare(content, "email exists.") == 0)
+            {
+                NotiSetText("Email exists", "電子郵件已存在");
+                return;
+            }
+            else
+            {
+                NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
             regAccount.text = "";
             regPassword.text = "";
             regConfirmPassword.text = "";
             regEmail.text = "";
-            loginInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            loginInfo.text = Localization.instance.GetLangNum() == 0 ? "Registration success" : "註冊成功";
+            NotiSetText("Registration success", "註冊成功");
             regPanel.SetActive(false);
             loginPanel.SetActive(true);
-        }
-        else if (string.Compare(content, "username exists") == 0)
-        {
-            regInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            regInfo.text = Localization.instance.GetLangNum() == 0 ? "Username exists" : "用戶名已存在";
-            regAccount.text = "";
-            regPassword.text = "";
-            regConfirmPassword.text = "";
-        }
-        else
-        {
-            Debug.Log("REGISTER ERROR");
-            return;
         }
     }
 
@@ -241,7 +236,7 @@ public class LoginManager : MonoBehaviour
 
     void LoginNowOnClick() 
     {
-        regInfo.text = "";
+        regEmail.text = "";
         regAccount.text = "";
         regPassword.text = "";
         regConfirmPassword.text = "";
@@ -257,5 +252,23 @@ public class LoginManager : MonoBehaviour
     void DoneLoading()
     {
         loadingGO.SetActive(false);
+    }
+
+    public void NotiSetText(string str1, string str2)
+    {
+        notiText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        notiText.text = Localization.instance.GetLangNum() == 0 ? str1 : str2;
+        NotiPop();
+    }
+
+    void NotiPop()
+    {
+        DOTween.Kill(noti);
+        noti.DOMoveY(1835, 0.2f).OnComplete(NotiUnpop);
+    }
+
+    void NotiUnpop()
+    {
+        noti.DOMoveY(2015, 0.2f).SetDelay(2);
     }
 }

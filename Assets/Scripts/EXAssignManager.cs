@@ -8,11 +8,15 @@ using TMPro;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Net;
 
 public class EXAssignManager : MonoBehaviour
 {
-    private string URL = "http://localhost:3000";
+    private string URL = "https://mongoserver-1-y3258239.deta.app/";
     private HttpClient client;
+
+    [Header("New")]
+    private int courseId;
 
     [Header("PreAssign")]
     [SerializeField] private GameObject preAssignGO;
@@ -48,10 +52,20 @@ public class EXAssignManager : MonoBehaviour
 
     [SerializeField] private UIManager uIManager;
 
+    [Header("Difficulty")]
+    [SerializeField] private Button diff1;
+    [SerializeField] private Button diff2;
+    [SerializeField] private Button diff3;
+
+    [SerializeField] private Sprite starOn;
+    [SerializeField] private Sprite starOff;
+
+
     //ExData
     private string exNameData ="";
     private string dueDateData ="";
     private string scheduleData ="";
+    private int diffData = 1;
     public List<QuestionData> questionDataList = new List<QuestionData>();
     public class QuestionData
     {
@@ -68,6 +82,7 @@ public class EXAssignManager : MonoBehaviour
     {
         client = new HttpClient();
         client.BaseAddress = new Uri(URL);
+        client.DefaultRequestHeaders.Add("x-api-key", "c0pPE1CyrvbW_keBnGfJuxJfKr2HAPB3T3U6zCF2JcR4e");
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         confirmBtn.onClick.AddListener(OnConfirm);
@@ -77,9 +92,12 @@ public class EXAssignManager : MonoBehaviour
         backBtn.onClick.AddListener(AssignBackOnClick);
 
         questionType.onValueChanged.AddListener(delegate { ChangeType(questionType); });
-
         dueDate.onValueChanged.AddListener(delegate { OnDateChanged(dueDate); });
         scheduleDate.onValueChanged.AddListener(delegate { OnDateChanged(scheduleDate); });
+
+        diff1.onClick.AddListener(delegate { DifficultyChange(1); });
+        diff2.onClick.AddListener(delegate { DifficultyChange(2); });
+        diff3.onClick.AddListener(delegate { DifficultyChange(3); });
     }
 
     private void Update()
@@ -116,7 +134,7 @@ public class EXAssignManager : MonoBehaviour
                     str = new List<string> { "question", questionDataList[listIdx].question, "questionType", questionDataList[listIdx].questionType, "answer", questionDataList[listIdx].answer, "answerA", questionDataList[listIdx].answerA, "answerB", questionDataList[listIdx].answerB, "answerC", questionDataList[listIdx].answerC, "answerD", questionDataList[listIdx].answerD };
                     break;
                 case "1":
-                    str = new List<string> { "question", questionDataList[listIdx].question, "questionType", questionDataList[listIdx].questionType, "answer", questionDataList[listIdx].answer };
+                    str = new List<string> { "question", questionDataList[listIdx].question, "questionType", questionDataList[listIdx].questionType, "answer", questionDataList[listIdx].answer, "answerA", "", "answerB", "", "answerC", "", "answerD", ""};
                     break;
                 default:
                     Debug.Log("Value error");
@@ -125,35 +143,52 @@ public class EXAssignManager : MonoBehaviour
             var dataStr = StringEncoder(str);
             dataList = dataList + dataStr;
         }
-        dataList = dataList + "], \"userID\": \""+ Userdata.instance.UID + "\", \"exName\": \"" + exNameData + "\", \"dueDate\": \"" + ChangeToDate(dueDateData) + "\", \"scheduleDate\": \"" + ChangeToDate(scheduleData) + "\"}";
-
-        Debug.Log(dataList);
+        dataList = dataList + "], \"courseId\": \"" + courseId + "\", \"userId\": \""+ UserManager.instance.UID + "\", \"exName\": \"" + exNameData + "\", \"dueDate\": \"" + ChangeToDate(dueDateData) + "\", \"scheduleDate\": \"" + ChangeToDate(scheduleData) + "\", \"difficulty\": " + diffData + "}";
 
         HttpContent c = new StringContent(dataList, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/assignex", c);
-            uIManager.DoneLoading();
+            res = await client.PostAsync("exercise/", c);
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
-            uIManager.DoneLoading();
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-
-        if (string.Compare(content, "assign successful") == 0)
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Course does not exist.") == 0)
+            {
+                uIManager.NotiSetText("Course does not exist", "課程不存在");
+                return;
+            }
+            else if (string.Compare(content, "User is not the teacher.") == 0)
+            {
+                uIManager.NotiSetText("User is not the teacher", "用戶不是課程的老師");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
             uIManager.NotiSetText("Assign Successful", "分派成功");
             AssignBackOnClick();
-        }
-        else
-        {
-            Debug.Log("ASSIGN ERROR");
-            return;
         }
     }
 
@@ -396,6 +431,26 @@ public class EXAssignManager : MonoBehaviour
         assignGO.SetActive(true);
     }
 
+    void DifficultyChange(int level)
+    {
+        diffData = level;
+        switch (level)
+        {
+            case 1:
+                diff2.GetComponent<Image>().sprite = starOff;
+                diff3.GetComponent<Image>().sprite = starOff;
+                break;
+            case 2:
+                diff2.GetComponent<Image>().sprite = starOn;
+                diff3.GetComponent<Image>().sprite = starOff;
+                break;
+            case 3:
+                diff2.GetComponent<Image>().sprite = starOn;
+                diff3.GetComponent<Image>().sprite = starOn;
+                break;
+        }
+    }
+
     void OnToggle()
     {
         toggleOn.SetActive(!toggleOn.activeSelf);
@@ -433,12 +488,14 @@ public class EXAssignManager : MonoBehaviour
     {
         preAssignGO.SetActive(false);
         assignGO.SetActive(false);
+        DifficultyChange(1);
     }
 
     void AssignBackOnClick()
     {
         preAssignGO.SetActive(true);
         assignGO.SetActive(false);
+        DifficultyChange(1);
     }
 
     string StringEncoder(List<string> list)

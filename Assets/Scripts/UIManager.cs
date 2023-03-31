@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
-    private string URL = "http://localhost:3000";
+    private string URL = "https://mongoserver-1-y3258239.deta.app/";
     private HttpClient client;
 
     [SerializeField] private Transform menu;
@@ -20,15 +20,19 @@ public class UIManager : MonoBehaviour
 
     [Header("Buttons")]
     [SerializeField] private Button menuButton;
+    [SerializeField] private Button courseButton;
     [SerializeField] private Button exerciseButton;
     [SerializeField] private Button assignButton;
     [SerializeField] private Button reviewButton;
-    [SerializeField] private Button connectionButton;
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button feedbackButton;
     [SerializeField] private Button aboutButton;
     [SerializeField] private Button logoutButton;
     [SerializeField] private Button exitButton;
+
+    [Header("Course")]
+    [SerializeField] private CourseManager courseManager;
+    [SerializeField] private GameObject coursePanel;
 
     [Header("Exercise")]
     [SerializeField] private EXListManager exListManager;
@@ -40,10 +44,6 @@ public class UIManager : MonoBehaviour
 
     [Header("Review")]
     [SerializeField] private EXReviewManager exReviewManager;
-
-    [Header("Connection")]
-    [SerializeField] private Connection connection;
-    [SerializeField] private GameObject connectionPanel;
 
     [Header("Feedback")]
     [SerializeField] private GameObject feedbackPanel;
@@ -82,10 +82,13 @@ public class UIManager : MonoBehaviour
     {
         client = new HttpClient();
         client.BaseAddress = new Uri(URL);
+        client.DefaultRequestHeaders.Add("x-api-key", "c0pPE1CyrvbW_keBnGfJuxJfKr2HAPB3T3U6zCF2JcR4e");
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         menuButton.onClick.AddListener(MenuOnClick);
-        menuVirtualBackground.onClick.AddListener(MenuOnClick);
+        menuVirtualBackground.onClick.AddListener(CloseMenu);
+
+        courseButton.onClick.AddListener(CoursePop);
 
         exerciseButton.onClick.AddListener(ExerciseListPop);
 
@@ -93,7 +96,6 @@ public class UIManager : MonoBehaviour
 
         reviewButton.onClick.AddListener(ReviewPop);
 
-        connectionButton.onClick.AddListener(ConnectionPop);
 
         feedbackButton.onClick.AddListener(FeedbackPop);
         feedbackSend.onClick.AddListener(FeedbackSend);
@@ -114,21 +116,19 @@ public class UIManager : MonoBehaviour
         exitYes.onClick.AddListener(ExitYes);
         exitNo.onClick.AddListener(ExitNo);
 
-        usernameText.text = Userdata.instance.USERNAME;
+        usernameText.text = UserManager.instance.USERNAME;
 
-        if (Userdata.instance.ROLE_TYPE == 0)
+        courseManager.GetCourseList();
+        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Courses" : "課程";
+        
+        if (UserManager.instance.ROLE_TYPE == 0)
         {
             assignButton.gameObject.SetActive(true);
-            assignPanel.SetActive(true);
-            topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            topBarText.text = Localization.instance.GetLangNum() == 0 ? "Assign" : "分派";
         }
         else
         {
             exerciseButton.gameObject.SetActive(true);
-            exerciseListPanel.SetActive(true);
-            topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            topBarText.text = Localization.instance.GetLangNum() == 0 ? "Exercises" : "練習";
         }
     }
 
@@ -143,11 +143,16 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            DOTween.Kill(menu);
-            MenuUnpop();
-            menuState = false;
-            menuVirtualBackground.gameObject.SetActive(false);
+            CloseMenu();
         }
+    }
+
+    void CloseMenu()
+    {
+        DOTween.Kill(menu);
+        MenuUnpop();
+        menuState = false;
+        menuVirtualBackground.gameObject.SetActive(false);
     }
 
     void MenuPop()
@@ -160,19 +165,39 @@ public class UIManager : MonoBehaviour
         menu.DOMoveX(-280, 0.3f);
     }
 
-    void ExerciseListPop()
+    void CoursePop()
     {
         DisableFuncPanels();
-        MenuOnClick();
+        CloseMenu();
+        courseManager.GetCourseList();
+        coursePanel.SetActive(true); 
+        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Courses" : "課程";
+    }
+
+    public void ExerciseListPop()
+    {
+        if (UserManager.instance.COURSEID <= 0)
+        {
+            NotiSetText("Please select course first", "請先選擇課程");
+            CloseMenu();
+            return;
+        }
+        DisableFuncPanels();
         exListManager.GetExList();
         topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Exercises" : "練習";
     }
 
-    void AssignPop()
+    public void AssignPop()
     {
+        if (UserManager.instance.COURSEID <= 0)
+        {
+            NotiSetText("Please select course first", "請先選擇課程");
+            CloseMenu();
+            return;
+        }
         DisableFuncPanels();
-        MenuOnClick();
         assignPanel.SetActive(true);
         topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Assign" : "分派";
@@ -180,20 +205,16 @@ public class UIManager : MonoBehaviour
 
     void ReviewPop()
     {
+        if (UserManager.instance.COURSEID <= 0)
+        {
+            NotiSetText("Please select course first", "請先選擇課程");
+            CloseMenu();
+            return;
+        }
         DisableFuncPanels();
-        MenuOnClick();
         exReviewManager.StartReview();
         topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Review" : "檢閱";
-    }
-
-    void ConnectionPop()
-    {
-        DisableFuncPanels();
-        MenuOnClick();
-        connection.OnChange();
-        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Connection" : "連接";
     }
 
     void DisableFuncPanels()
@@ -201,12 +222,12 @@ public class UIManager : MonoBehaviour
         exListManager.ExitEx();
         exAssignManager.ExitAssign();
         exReviewManager.ExitReview();
-        connectionPanel.SetActive(false);
+        coursePanel.SetActive(false);
     }
 
     void FeedbackPop()
     {
-        MenuOnClick();
+        CloseMenu();
         feedbackText.text = "";
         feedbackInfo.text = "";
         feedbackPanel.SetActive(true);
@@ -266,7 +287,7 @@ public class UIManager : MonoBehaviour
 
     void AboutPop()
     {
-        MenuOnClick();
+        CloseMenu();
         aboutPanel.SetActive(true);
     }
 
@@ -277,16 +298,13 @@ public class UIManager : MonoBehaviour
 
     void LogoutPop()
     {
-        MenuOnClick();
+        CloseMenu();
         logoutPanel.SetActive(true);
     }
 
     void LogoutYes()
     {
-        Userdata.instance.UID = "";
-        Userdata.instance.USERNAME = "";
-        Userdata.instance.TEACHER_UID = "";
-        Userdata.instance.ROLE_TYPE = 0;
+        UserManager.instance.ResetUserData();
         SceneManager.LoadScene(0);
     }
 
@@ -297,7 +315,7 @@ public class UIManager : MonoBehaviour
 
     void ExitPop()
     {
-        MenuOnClick();
+        CloseMenu();
         exitPanel.SetActive(true);
     }
 

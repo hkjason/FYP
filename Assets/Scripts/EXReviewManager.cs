@@ -7,10 +7,11 @@ using System.Net.Http.Headers;
 using System.Text;
 using UnityEngine.UI;
 using System.Linq;
+using System.Net;
 
 public class EXReviewManager : MonoBehaviour
 {
-    private string URL = "http://localhost:3000";
+    private string URL = "https://mongoserver-1-y3258239.deta.app/";
     private HttpClient client;
 
     [SerializeField] private GameObject reviewObject;
@@ -35,6 +36,7 @@ public class EXReviewManager : MonoBehaviour
     [SerializeField] private Button previousBtn;
     [SerializeField] private Button exitExBtn;
     [SerializeField] private GameObject sqAnsGO;
+    [SerializeField] private Sprite starOn;
 
     [Header("McImages")]
     [SerializeField] private Image mcImageA;
@@ -57,53 +59,7 @@ public class EXReviewManager : MonoBehaviour
     [SerializeField] private GameObject listPanel;
     [SerializeField] private GameObject stuObject;
 
-    private ReviewListDataRoot reviewListData = new ReviewListDataRoot();
-    private TeacherReviewListDataRoot teacherReviewListData = new TeacherReviewListDataRoot();
-
-    [Serializable]
-    public class ReviewListDataRoot
-    {
-        public ReviewListData[] root;
-    }
-
-    [Serializable]
-    public class ReviewListData
-    {
-        public string EXERCISE_ID;
-        public string EXERCISE_NAME;
-        public string COMPLETION_TIME;
-    }
-
-    [Serializable]
-    public class ReviewItemRoot
-    {
-        public ReviewItem[] root;
-    }
-    [Serializable]
-    public class ReviewItem
-    {
-        public string QUESTION_ID;
-        public string QUESTION;
-        public string QUESTION_TYPE;
-        public string CORRECT_ANSWER;
-        public string ANSWER_B;
-        public string ANSWER_C;
-        public string ANSWER_D;
-        public string ANSWER;
-    }
-    [Serializable]
-    public class TeacherReviewListDataRoot
-    {
-        public TeacherReviewListData[] root;
-    }
-
-    [Serializable]
-    public class TeacherReviewListData
-    {
-        public string EXERCISE_ID;
-        public string EXERCISE_NAME;
-        public string DUEDATE;
-    }
+    private ExerciseDataRoot exerciseReviewList = new ExerciseDataRoot();
 
     [Serializable]
     public class ResultItemRoot
@@ -123,71 +79,112 @@ public class EXReviewManager : MonoBehaviour
     {
         client = new HttpClient();
         client.BaseAddress = new Uri(URL);
+        client.DefaultRequestHeaders.Add("x-api-key", "c0pPE1CyrvbW_keBnGfJuxJfKr2HAPB3T3U6zCF2JcR4e");
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         nextBtn.onClick.AddListener(NextReview);
         previousBtn.onClick.AddListener(PreviousReview);
         exitExBtn.onClick.AddListener(ExitOnClick);
+        stuResBtn.onClick.AddListener(ReviewStudentResult);
 
         sortSelect.onValueChanged.AddListener(delegate{ SortOnClick(); });
         sortSelectStu.onValueChanged.AddListener(delegate { SortOnClick(); });
 
-        stuResBtn.onClick.AddListener(ReviewStudentResult);
     }
 
     public void StartReview()
     {
-        if (Userdata.instance.ROLE_TYPE == 0)
+        if (UserManager.instance.ROLE_TYPE == 0)
         {
-            sortSelect.gameObject.SetActive(true);
             GetTeacherReviewList();
         }
         else
         {
-            sortSelectStu.gameObject.SetActive(true);
             GetReviewList();
         }
     }
 
     async void GetReviewList()
     {
-        reviewListPanel.SetActive(true);
-
-        var payload = "{\"userID\": " + Userdata.instance.UID + "}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/getreviewlist", c);
-            uIManager.DoneLoading();
+            res = await client.GetAsync("exercise/completed/" + UserManager.instance.COURSEID + "/" + UserManager.instance.UID);
         }
         catch (HttpRequestException e)
         {
-            uIManager.DoneLoading();
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-        reviewListData = JsonUtility.FromJson<ReviewListDataRoot>("{\"root\":" + content + "}");
-        DisplayList();
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Course id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("Course id does not exist", "課程編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("User id does not exist", "用戶編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User is not a student.") == 0)
+            {
+                uIManager.NotiSetText("User is not a student", "用戶不是學生");
+                return;
+            }
+            else if (string.Compare(content, "User didn't register for the Course.") == 0)
+            {
+                uIManager.NotiSetText("User didn't register for the Course", "用戶沒有註冊課程");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            sortSelectStu.gameObject.SetActive(true);
+            reviewListPanel.SetActive(true);
+            exerciseReviewList = JsonUtility.FromJson<ExerciseDataRoot>("{\"root\":" + content + "}");
+            DisplayList();
+        }
     }
-
+    
     void DisplayList()
     {
         switch (sortSelectStu.value)
         {
             case 0:
-                reviewListData.root = reviewListData.root.OrderBy(x => x.COMPLETION_TIME).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderBy(x => x.completionTime).ToArray();
                 break;
             case 1:
-                reviewListData.root = reviewListData.root.OrderBy(x => x.EXERCISE_NAME).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderBy(x => x.exerciseName).ToArray();
                 break;
             case 2:
-                reviewListData.root = reviewListData.root.OrderByDescending(x => x.COMPLETION_TIME).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderBy(x => x.difficulty).ToArray();
                 break;
             case 3:
-                reviewListData.root = reviewListData.root.OrderByDescending(x => x.EXERCISE_NAME).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderByDescending(x => x.completionTime).ToArray();
+                break;
+            case 4:
+                exerciseReviewList.root = exerciseReviewList.root.OrderByDescending(x => x.exerciseName).ToArray();
+                break;
+            case 5:
+                exerciseReviewList.root = exerciseReviewList.root.OrderByDescending(x => x.difficulty).ToArray();
                 break;
         }
 
@@ -196,44 +193,85 @@ public class EXReviewManager : MonoBehaviour
             DestroyImmediate(reviewListParent.GetChild(0).gameObject);
         }
 
-        for (int i = 0; i < reviewListData.root.Length; i++)
+        for (int i = 0; i < exerciseReviewList.root.Length; i++)
         {
             GameObject exObj = Instantiate(reviewObjectStu, Vector3.zero, Quaternion.identity, reviewListParent);
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
-            exArray[0].text = reviewListData.root[i].EXERCISE_NAME;
-            exArray[1].text = reviewListData.root[i].COMPLETION_TIME.Substring(8, 2) + "/" + reviewListData.root[i].COMPLETION_TIME.Substring(5, 2);
+            exArray[0].text = exerciseReviewList.root[i].exerciseName;
+            exArray[1].text = exerciseReviewList.root[i].completionTime.Substring(8, 2) + "/" + exerciseReviewList.root[i].completionTime.Substring(5, 2);
+            Image[] imgArray = exObj.GetComponentsInChildren<Image>();
+            if (exerciseReviewList.root[i].difficulty == 2)
+            {
+                imgArray[2].sprite = starOn;
+            }
+            else if (exerciseReviewList.root[i].difficulty == 3)
+            {
+                imgArray[2].sprite = starOn;
+                imgArray[3].sprite = starOn;
+            }
             Button btn = exObj.GetComponent<Button>();
-            string eID = reviewListData.root[i].EXERCISE_ID;
+            string eID = exerciseReviewList.root[i].exerciseId.ToString();
             btn.onClick.AddListener(delegate { ExItemOnClick(eID); });
         }
     }
 
     async void ExItemOnClick(string eID)
     {
-        questionIdx = 0;
-        var payload = "{\"uID\": " + Userdata.instance.UID + ", \"eID\": " + eID + "}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/getreviewdetail", c);
-            uIManager.DoneLoading();
+            res = await client.GetAsync("record/exerciseId/" + eID + "/" + UserManager.instance.UID);
         }
         catch (HttpRequestException e)
         {
-            uIManager.DoneLoading();
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-        questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
-        QuestionDisplay();
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Exercise id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("Exercise id does not exist", "練習編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User is not a student.") == 0)
+            {
+                uIManager.NotiSetText("User is not a student", "用戶不是學生");
+                return;
+            }
+            else if (string.Compare(content, "User isn't registered to the Course.") == 0)
+            {
+                uIManager.NotiSetText("User isn't registered to the Course", "用戶沒有註冊該課程");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            questionIdx = 0;
+            questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
+            QuestionDisplay();
+        }
     }
 
     void QuestionDisplay()
     {
-        if (Userdata.instance.ROLE_TYPE == 0)
+        if (UserManager.instance.ROLE_TYPE == 0)
         {
             stuResBtn.gameObject.SetActive(true);
         }
@@ -255,31 +293,31 @@ public class EXReviewManager : MonoBehaviour
 
         exName.text = "Question: " + (questionIdx + 1);
 
-        exQ.text = questionList.root[questionIdx].QUESTION;
+        exQ.text = questionList.root[questionIdx].question;
 
-        switch (questionList.root[questionIdx].QUESTION_TYPE)
+        switch (questionList.root[questionIdx].questionType)
         {
             case "0":
                 sQGO.SetActive(false);
-                imgTextA.text = questionList.root[questionIdx].CORRECT_ANSWER;
-                imgTextB.text = questionList.root[questionIdx].ANSWER_B;
-                imgTextC.text = questionList.root[questionIdx].ANSWER_C;
-                imgTextD.text = questionList.root[questionIdx].ANSWER_D;
+                imgTextA.text = questionList.root[questionIdx].correctAnswer;
+                imgTextB.text = questionList.root[questionIdx].answerB;
+                imgTextC.text = questionList.root[questionIdx].answerC;
+                imgTextD.text = questionList.root[questionIdx].answerD;
 
                 mcImageA.gameObject.SetActive(true);
                 mcImageB.gameObject.SetActive(true);
                 mcImageC.gameObject.SetActive(true);
                 mcImageD.gameObject.SetActive(true);
 
-                if (string.Compare(questionList.root[questionIdx].ANSWER, questionList.root[questionIdx].ANSWER_B) == 0) 
+                if (string.Compare(questionList.root[questionIdx].answer, questionList.root[questionIdx].answerB) == 0) 
                 {
                     mcImageB.sprite = redBtnImg;
                 }
-                if (string.Compare(questionList.root[questionIdx].ANSWER, questionList.root[questionIdx].ANSWER_C) == 0)
+                if (string.Compare(questionList.root[questionIdx].answer, questionList.root[questionIdx].answerC) == 0)
                 {
                     mcImageC.sprite = redBtnImg;
                 }
-                if (string.Compare(questionList.root[questionIdx].ANSWER, questionList.root[questionIdx].ANSWER_D) == 0)
+                if (string.Compare(questionList.root[questionIdx].answer, questionList.root[questionIdx].answerD) == 0)
                 {
                     mcImageD.sprite = redBtnImg;
                 }
@@ -291,15 +329,15 @@ public class EXReviewManager : MonoBehaviour
                 mcImageB.gameObject.SetActive(false);
                 mcImageC.gameObject.SetActive(false);
                 mcImageD.gameObject.SetActive(false);
-                corrAnsText.text = "Correct Answer: " + questionList.root[questionIdx].CORRECT_ANSWER;
-                if (Userdata.instance.ROLE_TYPE == 0)
+                corrAnsText.text = "Correct Answer: " + questionList.root[questionIdx].correctAnswer;
+                if (UserManager.instance.ROLE_TYPE == 0)
                 {
                     sqAnsGO.SetActive(false);
                 }
                 else
                 {
                     sqAnsGO.SetActive(true);
-                    yourAnsText.text = "Your Answer: " + questionList.root[questionIdx].ANSWER;
+                    yourAnsText.text = "Your Answer: " + questionList.root[questionIdx].answer;
                 }
 
                 break;
@@ -313,31 +351,51 @@ public class EXReviewManager : MonoBehaviour
 
     async void ReviewStudentResult()
     {
-        if (listPanel.activeSelf)
-        {
-            listPanel.SetActive(false);
-            return;
-        }
-
-        var payload = "{\"qID\": " + questionList.root[questionIdx].QUESTION_ID + ", \"uID\": "+ Userdata.instance.UID +"}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/getstudentperformance", c);
-            uIManager.DoneLoading();
+            res = await client.GetAsync("record/getRecordsByQuestionId/" + questionList.root[questionIdx].questionId);
         }
         catch (HttpRequestException e)
         {
-            uIManager.DoneLoading();
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-        Debug.Log("Content: " + content);
-        var data = JsonUtility.FromJson<ResultItemRoot>("{\"root\":" + content + "}");
-        DisplayStudentResult(data);
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Question doesn't exist.") == 0)
+            {
+                uIManager.NotiSetText("Question doesn't exist", "問題不存在");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            if (listPanel.activeSelf)
+            {
+                listPanel.SetActive(false);
+                return;
+            }
+            Debug.Log("review395: " + content);
+            var data = JsonUtility.FromJson<ResultItemRoot>("{\"root\":" + content + "}");
+            DisplayStudentResult(data);
+        }
     }
 
     void DisplayStudentResult(ResultItemRoot data)
@@ -367,26 +425,57 @@ public class EXReviewManager : MonoBehaviour
 
     async void GetTeacherReviewList()
     {
-        reviewListPanel.SetActive(true);
-
-        var payload = "{\"uID\": " + Userdata.instance.UID + "}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/getteacherreviewlist", c);
-            uIManager.DoneLoading();
+            res = await client.GetAsync("exercise/" + UserManager.instance.COURSEID + "/" + UserManager.instance.UID);
         }
         catch (HttpRequestException e)
         {
-            uIManager.DoneLoading();
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-        teacherReviewListData = JsonUtility.FromJson<TeacherReviewListDataRoot>("{\"root\":" + content + "}");
-        DisplayTeacherList();
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Course id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("Course id does not exist", "課程編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("User id does not exist", "用戶編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User is not the teacher.") == 0)
+            {
+                uIManager.NotiSetText("User is not the teacher", "用戶不是課程的老師");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            sortSelect.gameObject.SetActive(true);
+            reviewListPanel.SetActive(true);
+            exerciseReviewList = JsonUtility.FromJson<ExerciseDataRoot>("{\"root\":" + content + "}");
+            DisplayTeacherList();
+        }
     }
 
     void DisplayTeacherList()
@@ -394,16 +483,22 @@ public class EXReviewManager : MonoBehaviour
         switch (sortSelect.value)
         {
             case 0:
-                teacherReviewListData.root = teacherReviewListData.root.OrderBy(x => x.DUEDATE).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderBy(x => x.dueDate).ToArray();
                 break;
             case 1:
-                teacherReviewListData.root = teacherReviewListData.root.OrderBy(x => x.EXERCISE_NAME).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderBy(x => x.exerciseName).ToArray();
                 break;
             case 2:
-                teacherReviewListData.root = teacherReviewListData.root.OrderByDescending(x => x.DUEDATE).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderBy(x => x.difficulty).ToArray();
                 break;
             case 3:
-                teacherReviewListData.root = teacherReviewListData.root.OrderByDescending(x => x.EXERCISE_NAME).ToArray();
+                exerciseReviewList.root = exerciseReviewList.root.OrderByDescending(x => x.dueDate).ToArray();
+                break;
+            case 4:
+                exerciseReviewList.root = exerciseReviewList.root.OrderByDescending(x => x.exerciseName).ToArray();
+                break;
+            case 5:
+                exerciseReviewList.root = exerciseReviewList.root.OrderByDescending(x => x.difficulty).ToArray();
                 break;
         }
 
@@ -412,44 +507,76 @@ public class EXReviewManager : MonoBehaviour
             DestroyImmediate(reviewListParent.GetChild(0).gameObject);
         }
 
-        for (int i = 0; i < teacherReviewListData.root.Length; i++)
+        for (int i = 0; i < exerciseReviewList.root.Length; i++)
         {
             GameObject exObj = Instantiate(reviewObject, Vector3.zero, Quaternion.identity, reviewListParent);
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
-            exArray[0].text = teacherReviewListData.root[i].EXERCISE_NAME;
-            exArray[1].text = teacherReviewListData.root[i].DUEDATE.Substring(8, 2) + "/" + teacherReviewListData.root[i].DUEDATE.Substring(5, 2);
+            exArray[0].text = exerciseReviewList.root[i].exerciseName;
+            exArray[1].text = exerciseReviewList.root[i].dueDate.Substring(8, 2) + "/" + exerciseReviewList.root[i].dueDate.Substring(5, 2);
             Button btn = exObj.GetComponent<Button>();
-            string eID = teacherReviewListData.root[i].EXERCISE_ID;
+            Image[] imgArray = exObj.GetComponentsInChildren<Image>();
+            if (exerciseReviewList.root[i].difficulty == 2)
+            {
+                imgArray[2].sprite = starOn;
+            }
+            else if (exerciseReviewList.root[i].difficulty == 3)
+            {
+                imgArray[2].sprite = starOn;
+                imgArray[3].sprite = starOn;
+            }
+            string eID = exerciseReviewList.root[i].exerciseId.ToString();
             btn.onClick.AddListener(delegate { TeacherExItemOnClick(eID); });
         }
     }
 
     async void TeacherExItemOnClick(string eID)
     {
-        questionIdx = 0;
-        var payload = "{\"eID\": " + eID + "}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/getteacherreviewdetail", c);
-            uIManager.DoneLoading();
+            res = await client.GetAsync("question/getQuestionDetailsByExerciseId/" + eID);
         }
         catch (HttpRequestException e)
         {
-            uIManager.DoneLoading();
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-        questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
-        QuestionDisplay();
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Exercise id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("Exercise id does not exist", "練習編號不存在");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            questionIdx = 0;
+            questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
+            QuestionDisplay();
+        }
+
     }
 
     void SortOnClick()
     {
-        if (Userdata.instance.ROLE_TYPE == 0)
+        if (UserManager.instance.ROLE_TYPE == 0)
         {
             DisplayTeacherList();
         }

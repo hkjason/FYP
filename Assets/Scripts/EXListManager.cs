@@ -7,10 +7,11 @@ using System.Net.Http.Headers;
 using System.Text;
 using UnityEngine.UI;
 using System.Linq;
+using System.Net;
 
 public class EXListManager : MonoBehaviour
 {
-    private string URL = "http://localhost:3000";
+    private string URL = "https://mongoserver-1-y3258239.deta.app/";
     private HttpClient client;
 
     [SerializeField] private TMP_Dropdown sortSelect;
@@ -35,6 +36,7 @@ public class EXListManager : MonoBehaviour
     [SerializeField] private TMP_Text btnTextC;
     [SerializeField] private TMP_Text btnTextD;
     [SerializeField] private TMP_InputField answerInput;
+    [SerializeField] private Sprite starOn;
 
     [Space(5)]
     [SerializeField] private Button exitExBtn;
@@ -71,6 +73,7 @@ public class EXListManager : MonoBehaviour
         public string EXERCISE_ID;
         public string EXERCISE_NAME;
         public string DUEDATE;
+        public int DIFFICULTY;
     }
     [Serializable]
     public class ListItemRoot
@@ -96,10 +99,12 @@ public class EXListManager : MonoBehaviour
     {
         client = new HttpClient();
         client.BaseAddress = new Uri(URL);
+        client.DefaultRequestHeaders.Add("x-api-key", "c0pPE1CyrvbW_keBnGfJuxJfKr2HAPB3T3U6zCF2JcR4e");
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         nextBtn.onClick.AddListener(NextQuestion);
         submitButton.onClick.AddListener(SubmitAnswer);
+        exitExBtn.onClick.AddListener(ExitOnClick);
 
         sortSelect.onValueChanged.AddListener(delegate { DisplayEx(); });
 
@@ -107,37 +112,67 @@ public class EXListManager : MonoBehaviour
         btnB.onClick.AddListener(delegate { McOnClick(1); });
         btnC.onClick.AddListener(delegate { McOnClick(2); });
         btnD.onClick.AddListener(delegate { McOnClick(3); });
-
-        exitExBtn.onClick.AddListener(ExitOnClick);
-
-        if (Userdata.instance.ROLE_TYPE == 1)
-        {
-            GetExList();
-        }
     }
 
     public async void GetExList()
     {
-        exListPanel.SetActive(true);
-
-        var payload = "{\"userID\": " + Userdata.instance.UID + ", \"teacherID\": " + Userdata.instance.TEACHER_UID +"}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/getexlist", c);
-            uIManager.DoneLoading();
+            res = await client.GetAsync("exercise/pending/" + UserManager.instance.COURSEID + "/" + UserManager.instance.UID);
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
-            uIManager.DoneLoading();
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
-        exListData = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
-        DisplayEx();
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Course id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("Course id does not exist", "課程編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("User id does not exist", "用戶編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User is not a student.") == 0)
+            {
+                uIManager.NotiSetText("User is not a student", "用戶不是學生");
+                return;
+            }
+            else if (string.Compare(content, "User didn't register for the Course.") == 0)
+            {
+                uIManager.NotiSetText("User didn't register for the Course", "用戶沒有註冊課程");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            exListPanel.SetActive(true);
+            Debug.Log("exlist 171: " + content);
+            exListData = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
+            DisplayEx();
+        }
+
     }
 
     void DisplayEx()
@@ -151,10 +186,16 @@ public class EXListManager : MonoBehaviour
                 exListData.root = exListData.root.OrderBy(x => x.EXERCISE_NAME).ToArray();
                 break;
             case 2:
-                exListData.root = exListData.root.OrderByDescending(x => x.DUEDATE).ToArray();
+                exListData.root = exListData.root.OrderBy(x => x.DIFFICULTY).ToArray();
                 break;
             case 3:
+                exListData.root = exListData.root.OrderByDescending(x => x.DUEDATE).ToArray();
+                break;
+            case 4:
                 exListData.root = exListData.root.OrderByDescending(x => x.EXERCISE_NAME).ToArray();
+                break;
+            case 5:
+                exListData.root = exListData.root.OrderByDescending(x => x.DIFFICULTY).ToArray();
                 break;
         }
         while (exListParent.childCount > 0)
@@ -162,12 +203,22 @@ public class EXListManager : MonoBehaviour
             DestroyImmediate(exListParent.GetChild(0).gameObject);
         }
 
-        for(int i = 0; i< exListData.root.Length; i++) 
+        for (int i = 0; i < exListData.root.Length; i++)
         {
             GameObject exObj = Instantiate(exObject, Vector3.zero, Quaternion.identity, exListParent);
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
             exArray[0].text = exListData.root[i].EXERCISE_NAME;
             exArray[1].text = exListData.root[i].DUEDATE.Substring(8, 2) + "/" + exListData.root[i].DUEDATE.Substring(5, 2);
+            Image[] imgArray = exObj.GetComponentsInChildren<Image>();
+            if (exListData.root[i].DIFFICULTY == 2)
+            {
+                imgArray[2].sprite = starOn;
+            }
+            else if (exListData.root[i].DIFFICULTY == 3)
+            {
+                imgArray[2].sprite = starOn;
+                imgArray[3].sprite = starOn;
+            }
             Button btn = exObj.GetComponent<Button>();
             string eID = exListData.root[i].EXERCISE_ID;
             btn.onClick.AddListener(delegate { ExItemOnClick(eID); });
@@ -178,22 +229,46 @@ public class EXListManager : MonoBehaviour
     {
         questionIdx = 0;
         questionRecordList = new List<QuestionRecord>();
-        var payload = "{\"eID\": " + eID + "}";
-        HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
+
         HttpResponseMessage res;
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/getexdetails", c);
-            uIManager.DoneLoading();
+            res = await client.GetAsync("question/getQuestionsByExerciseId/" + eID);
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
-            uIManager.DoneLoading();
             return;
         }
+        finally
+        {
+            uIManager.DoneLoading();
+        }
         var content = await res.Content.ReadAsStringAsync();
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
+        {
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+            return;
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "Exercise id does not exist.") == 0)
+            {
+                uIManager.NotiSetText("Exercise id does not exist", "練習編號不存在");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            //OK
+        }
+
         questionList = JsonUtility.FromJson<ListItemRoot>("{\"root\":" + content + "}");
         QuestionDisplay();
     }
@@ -374,12 +449,12 @@ public class EXListManager : MonoBehaviour
                 dataList = dataList + ",";
             }
             List<string> str = new List<string>();
-            str = new List<string> { "qID", questionRecordList[listIdx].questionId, "answer" , questionRecordList[listIdx].answer };
+            str = new List<string> { "questionId", questionRecordList[listIdx].questionId, "answer" , questionRecordList[listIdx].answer };
             var dataStr = StringEncoder(str);
             dataList = dataList + dataStr;
         }
 
-        dataList = dataList + "], \"uID\": \"" + Userdata.instance.UID + "\"}";
+        dataList = dataList + "], \"userId\": \"" + UserManager.instance.UID + "\"}";
 
         Debug.Log(dataList);
 
@@ -388,28 +463,49 @@ public class EXListManager : MonoBehaviour
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("exercise/submitex", c);
-            uIManager.DoneLoading();
+            res = await client.PostAsync("question/", c);
         }
         catch (HttpRequestException e)
         {
             uIManager.NotiSetText("Connection failure, please check network connection or server", "連接失敗，請檢查網絡連接或伺服器");
-            uIManager.DoneLoading();
             return;
+        }
+        finally
+        {
+            uIManager.DoneLoading();
         }
         var content = await res.Content.ReadAsStringAsync();
-
-        if (string.Compare(content, "submit successful") == 0)
+        if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
         {
-            uIManager.NotiSetText("Submit Successful", "提交成功");
-            ExitOnClick();
-            GetExList();
-        }
-        else
-        {
-            Debug.Log("SUBMIT ERROR");
+            uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
             return;
         }
+        else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
+        {
+            if (string.Compare(content, "UserId does not exist.") == 0)
+            {
+                uIManager.NotiSetText("User id does not exist", "用戶編號不存在");
+                return;
+            }
+            else if (string.Compare(content, "User is not a student.") == 0)
+            {
+                uIManager.NotiSetText("User is not a student", "用戶不是學生");
+                return;
+            }
+            else
+            {
+                uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
+            }
+        }
+        else if (res.StatusCode.Equals(HttpStatusCode.OK))
+        {
+            //OK
+        }
+
+        uIManager.NotiSetText("Submit Successful", "提交成功");
+        ExitOnClick();
+        //GetExList();
     }
     
     string StringEncoder(List<string> list)
