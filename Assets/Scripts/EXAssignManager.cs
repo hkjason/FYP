@@ -15,20 +15,23 @@ public class EXAssignManager : MonoBehaviour
     private string URL = "https://mongoserver-1-y3258239.deta.app/";
     private HttpClient client;
 
-    [Header("New")]
-    private int courseId;
-
     [Header("PreAssign")]
     [SerializeField] private GameObject preAssignGO;
     [Space(5)]
     [SerializeField] private TMP_InputField exerciseName;
     [SerializeField] private TMP_InputField dueDate;
     [SerializeField] private TMP_InputField scheduleDate;
+    [SerializeField] private TMP_InputField scheduleDateAns;
     [Space(5)]
     [SerializeField] private Button toggleBtn;
     [SerializeField] private GameObject toggleOn;
     [SerializeField] private GameObject toggleOff;
+    [SerializeField] private Button toggleBtnAns;
+    [SerializeField] private GameObject toggleOnAns;
+    [SerializeField] private GameObject toggleOffAns;
     [SerializeField] private Button confirmBtn;
+
+
 
     [Header("Assign")]
     private int questionIdx = 0;
@@ -65,6 +68,7 @@ public class EXAssignManager : MonoBehaviour
     private string exNameData ="";
     private string dueDateData ="";
     private string scheduleData ="";
+    private string scheduleDataAns = "";
     private int diffData = 1;
     public List<QuestionData> questionDataList = new List<QuestionData>();
     public class QuestionData
@@ -88,12 +92,14 @@ public class EXAssignManager : MonoBehaviour
         confirmBtn.onClick.AddListener(OnConfirm);
         assignButton.onClick.AddListener(OnAssign);
         toggleBtn.onClick.AddListener(OnToggle);
+        toggleBtnAns.onClick.AddListener(OnToggleAns);
         saveNNext.onClick.AddListener(delegate { OnSave(); } );
         backBtn.onClick.AddListener(AssignBackOnClick);
 
         questionType.onValueChanged.AddListener(delegate { ChangeType(questionType); });
         dueDate.onValueChanged.AddListener(delegate { OnDateChanged(dueDate); });
         scheduleDate.onValueChanged.AddListener(delegate { OnDateChanged(scheduleDate); });
+        scheduleDateAns.onValueChanged.AddListener(delegate { OnDateChanged(scheduleDateAns); });
 
         diff1.onClick.AddListener(delegate { DifficultyChange(1); });
         diff2.onClick.AddListener(delegate { DifficultyChange(2); });
@@ -108,6 +114,10 @@ public class EXAssignManager : MonoBehaviour
             if (toggleOn.activeSelf)
             {
                 scheduleDate.caretPosition = scheduleDate.text.Length;
+            }
+            if (toggleOnAns.activeSelf)
+            {
+                scheduleDateAns.caretPosition = scheduleDateAns.text.Length;
             }
         }
     }
@@ -134,7 +144,7 @@ public class EXAssignManager : MonoBehaviour
                     str = new List<string> { "question", questionDataList[listIdx].question, "questionType", questionDataList[listIdx].questionType, "answer", questionDataList[listIdx].answer, "answerA", questionDataList[listIdx].answerA, "answerB", questionDataList[listIdx].answerB, "answerC", questionDataList[listIdx].answerC, "answerD", questionDataList[listIdx].answerD };
                     break;
                 case "1":
-                    str = new List<string> { "question", questionDataList[listIdx].question, "questionType", questionDataList[listIdx].questionType, "answer", questionDataList[listIdx].answer, "answerA", "", "answerB", "", "answerC", "", "answerD", ""};
+                    str = new List<string> { "question", questionDataList[listIdx].question, "questionType", questionDataList[listIdx].questionType, "answer", questionDataList[listIdx].answer, "answerA", "", "answerB", "", "answerC", "", "answerD", "" };
                     break;
                 default:
                     Debug.Log("Value error");
@@ -143,8 +153,17 @@ public class EXAssignManager : MonoBehaviour
             var dataStr = StringEncoder(str);
             dataList = dataList + dataStr;
         }
-        dataList = dataList + "], \"courseId\": \"" + courseId + "\", \"userId\": \""+ UserManager.instance.UID + "\", \"exName\": \"" + exNameData + "\", \"dueDate\": \"" + ChangeToDate(dueDateData) + "\", \"scheduleDate\": \"" + ChangeToDate(scheduleData) + "\", \"difficulty\": " + diffData + "}";
+        if (string.Compare(scheduleDataAns, "") == 0)
+        {
+            dataList = dataList + "], \"courseId\": \"" + UserManager.instance.COURSEID + "\", \"userId\": \"" + UserManager.instance.UID + "\", \"exName\": \"" + exNameData + "\", \"dueDate\": \"" + ChangeToDate(dueDateData) + "\", \"scheduleDate\": \"" + ChangeToDate(scheduleData) + "\", \"difficulty\": " + diffData + "}";
+        }
+        else 
+        {
+            dataList = dataList + "], \"courseId\": \"" + UserManager.instance.COURSEID + "\", \"userId\": \"" + UserManager.instance.UID + "\", \"exName\": \"" + exNameData + "\", \"dueDate\": \"" + ChangeToDate(dueDateData) + "\", \"scheduleDate\": \"" + ChangeToDate(scheduleData) + "\", \"releaseDate\": \"" + ChangeToDate(scheduleDataAns) + "\", \"difficulty\": " + diffData + "}";
+        }
+        
 
+        Debug.Log("datalist: " + dataList);
         HttpContent c = new StringContent(dataList, Encoding.UTF8, "application/json");
         HttpResponseMessage res;
         try
@@ -274,18 +293,8 @@ public class EXAssignManager : MonoBehaviour
         questionDataList.Add(questionData);
         questionIdx++;
 
-        switch (questionType.value)
-        {
-            case 0:
-                ResetMCValue();
-                break;
-            case 1:
-                ResetSQValue();
-                break;
-            default:
-                Debug.Log("Value error");
-                return false;
-        }
+        ResetQuestionValue();
+
         questionNameText.text = "Question: " + (questionIdx + 1);
         return true;
     }
@@ -391,6 +400,28 @@ public class EXAssignManager : MonoBehaviour
             scheduleData = "";
         }
 
+        if (toggleOnAns.activeSelf)
+        {
+            if (string.Compare(scheduleDateAns.text, "") == 0)
+            {
+                uIManager.NotiSetText("Schedule answer release date cannot be empty", "答案發布日期不能為空");
+                return;
+            }
+            if (DateValidate(scheduleDateAns.text + " 00:00:00"))
+            {
+                scheduleDataAns = scheduleDateAns.text + " 00:00:00";
+            }
+            else
+            {
+                uIManager.NotiSetText("Invalid schedule date", "無效的答案發布日期");
+                return;
+            }
+        }
+        else
+        {
+            scheduleDataAns = "";
+        }
+
         if (DateValidate(dueDate.text + " 23:59:59"))
         {
             dueDateData = dueDate.text + " 23:59:59";
@@ -458,31 +489,38 @@ public class EXAssignManager : MonoBehaviour
         scheduleDate.gameObject.SetActive(!scheduleDate.gameObject.activeSelf);
     }
 
+    void OnToggleAns()
+    {
+        toggleOnAns.SetActive(!toggleOnAns.activeSelf);
+        toggleOffAns.SetActive(!toggleOffAns.activeSelf);
+        scheduleDateAns.gameObject.SetActive(!scheduleDateAns.gameObject.activeSelf);
+    }
+
     void ResetPreAssignValue()
     {
 
         exerciseName.text = "";
         dueDate.text = "";
         scheduleDate.text = "";
+        scheduleDateAns.text = "";
         toggleOn.SetActive(false);
         toggleOff.SetActive(true);
         scheduleDate.gameObject.SetActive(false);
+        toggleOnAns.SetActive(false);
+        toggleOffAns.SetActive(true);
+        scheduleDateAns.gameObject.SetActive(false);
     }
 
-    void ResetMCValue() 
+    void ResetQuestionValue() 
     {
         questionInput.text = "";
         aInput.text = "";
         bInput.text = "";
         cInput.text = "";
         dInput.text = "";
-    }
-
-    void ResetSQValue() 
-    {
-        questionInput.text = "";
         answerInput.text = "";
     }
+
 
     public void ExitAssign()
     {

@@ -1,5 +1,6 @@
 using DG.Tweening;
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -24,6 +25,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button exerciseButton;
     [SerializeField] private Button assignButton;
     [SerializeField] private Button reviewButton;
+    [SerializeField] private Button quizButton;
+    [SerializeField] private Button addStudentButton;
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button feedbackButton;
     [SerializeField] private Button aboutButton;
@@ -44,6 +47,15 @@ public class UIManager : MonoBehaviour
 
     [Header("Review")]
     [SerializeField] private EXReviewManager exReviewManager;
+
+    [Header("Quiz")]
+    [SerializeField] private GameObject quizPanel;
+    [SerializeField] private RealTimeQuiz realTimeQuiz;
+
+    [Header("AddStudent")]
+    [SerializeField] private GameObject addStudentPanel;
+    [SerializeField] private Button addStudentDimed;
+    [SerializeField] private Button addStudentQuit;
 
     [Header("Feedback")]
     [SerializeField] private GameObject feedbackPanel;
@@ -78,6 +90,10 @@ public class UIManager : MonoBehaviour
 
     private bool menuState = false;
 
+
+    [SerializeField] private Transform notiOri;
+    [SerializeField] private Transform notiTo;
+
     void Start()
     {
         client = new HttpClient();
@@ -96,6 +112,11 @@ public class UIManager : MonoBehaviour
 
         reviewButton.onClick.AddListener(ReviewPop);
 
+        quizButton.onClick.AddListener(QuizPop);
+
+        addStudentButton.onClick.AddListener(AddStudentPop);
+        addStudentDimed.onClick.AddListener(AddStudentExit);
+        addStudentQuit.onClick.AddListener(AddStudentExit);
 
         feedbackButton.onClick.AddListener(FeedbackPop);
         feedbackSend.onClick.AddListener(FeedbackSend);
@@ -125,10 +146,12 @@ public class UIManager : MonoBehaviour
         if (UserManager.instance.ROLE_TYPE == 0)
         {
             assignButton.gameObject.SetActive(true);
+            addStudentButton.gameObject.SetActive(true);
         }
         else
         {
             exerciseButton.gameObject.SetActive(true);
+            addStudentButton.gameObject.SetActive(false);
         }
     }
 
@@ -177,10 +200,10 @@ public class UIManager : MonoBehaviour
 
     public void ExerciseListPop()
     {
+        CloseMenu();
         if (UserManager.instance.COURSEID <= 0)
         {
             NotiSetText("Please select course first", "請先選擇課程");
-            CloseMenu();
             return;
         }
         DisableFuncPanels();
@@ -191,10 +214,10 @@ public class UIManager : MonoBehaviour
 
     public void AssignPop()
     {
+        CloseMenu();
         if (UserManager.instance.COURSEID <= 0)
         {
             NotiSetText("Please select course first", "請先選擇課程");
-            CloseMenu();
             return;
         }
         DisableFuncPanels();
@@ -205,10 +228,10 @@ public class UIManager : MonoBehaviour
 
     void ReviewPop()
     {
+        CloseMenu();
         if (UserManager.instance.COURSEID <= 0)
         {
             NotiSetText("Please select course first", "請先選擇課程");
-            CloseMenu();
             return;
         }
         DisableFuncPanels();
@@ -217,11 +240,43 @@ public class UIManager : MonoBehaviour
         topBarText.text = Localization.instance.GetLangNum() == 0 ? "Review" : "檢閱";
     }
 
+    void QuizPop()
+    {
+        CloseMenu();
+        if (UserManager.instance.COURSEID <= 0)
+        {
+            NotiSetText("Please select course first", "請先選擇課程");
+            return;
+        }
+        DisableFuncPanels();
+        realTimeQuiz.StartQuiz();
+        topBarText.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
+        topBarText.text = Localization.instance.GetLangNum() == 0 ? "Quiz" : "測驗";
+    }
+
+
+    void AddStudentPop()
+    {
+        CloseMenu();
+        if (UserManager.instance.COURSEID <= 0)
+        {
+            NotiSetText("Please select course first", "請先選擇課程");
+            return;
+        }
+        addStudentPanel.SetActive(true);
+    }
+
+    void AddStudentExit()
+    {
+        addStudentPanel.SetActive(false);
+    }
+
     void DisableFuncPanels()
     {
         exListManager.ExitEx();
         exAssignManager.ExitAssign();
         exReviewManager.ExitReview();
+        realTimeQuiz.ExitQuiz();
         coursePanel.SetActive(false);
     }
 
@@ -242,7 +297,7 @@ public class UIManager : MonoBehaviour
             HttpResponseMessage res;
             try
             {
-                res = await client.PostAsync("feedback/sendfeedback", c);
+                res = await client.PostAsync("feedback/", c);
             }
             catch (HttpRequestException e)
             {
@@ -250,23 +305,29 @@ public class UIManager : MonoBehaviour
                 return;
             }
             var content = await res.Content.ReadAsStringAsync();
-
-            if (string.Compare(content, "Feedback Success") == 0)
+            if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
             {
-                feedbackInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-                feedbackInfo.text = Localization.instance.GetLangNum() == 0 ? "Feedback Success" : "反饋成功";
+                NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
+                return;
             }
-            else if (string.Compare(content, "Feedback Error") == 0)
+            else if (res.StatusCode.Equals(HttpStatusCode.BadRequest))
             {
-                feedbackInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-                feedbackInfo.text = Localization.instance.GetLangNum() == 0 ? "Error, please try again later" : "錯誤，請稍後重試";
+                if (string.Compare(content, "Feedback Error") == 0)
+                {
+                    NotiSetText("Error, please try again later", "錯誤，請稍後重試");
+                }
             }
-            feedbackText.text = "";
+            else if (res.StatusCode.Equals(HttpStatusCode.OK))
+            {
+                NotiSetText("Feedback Success", "反饋成功");
+                feedbackText.text = "";
+                FeedbackExit();
+                return;
+            }
         }
         else
         {
-            feedbackInfo.font = Localization.instance.GetLangNum() == 0 ? Localization.instance.engFont : Localization.instance.chiFont;
-            feedbackInfo.text = Localization.instance.GetLangNum() == 0 ? "Feedback cannot be empty" : "反饋不能為空";
+            NotiSetText("Feedback cannot be empty", "反饋不能為空");
         }
     }
 
@@ -339,11 +400,11 @@ public class UIManager : MonoBehaviour
     void NotiPop()
     {
         DOTween.Kill(noti);
-        noti.DOMoveY(1693, 0.2f).OnComplete(NotiUnpop);
+        noti.DOMoveY(notiTo.position.y, 0.2f).OnComplete(NotiUnpop);
     }
 
     void NotiUnpop()
     {
-        noti.DOMoveY(1920, 0.2f).SetDelay(2);
+        noti.DOMoveY(notiOri.position.y, 0.2f).SetDelay(2);
     }
 }

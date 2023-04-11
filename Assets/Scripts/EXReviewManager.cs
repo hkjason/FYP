@@ -23,7 +23,7 @@ public class EXReviewManager : MonoBehaviour
     [SerializeField] private TMP_Dropdown sortSelectStu;
 
     private int questionIdx = 0;
-    private ReviewItemRoot questionList;
+    private QuestionDataRoot questionList;
 
     [Header("ExDisplay")]
     [SerializeField] private GameObject reviewDisplayParent;
@@ -59,6 +59,16 @@ public class EXReviewManager : MonoBehaviour
     [SerializeField] private GameObject listPanel;
     [SerializeField] private GameObject stuObject;
 
+    [Header("ExItemDetail")]
+    [SerializeField] private GameObject exDetailPanel;
+    [SerializeField] private TMP_Text exNameText;
+    [SerializeField] private Button exDetailCloseBtn;
+    [SerializeField] private Button exDetailDimBg;
+    [SerializeField] private Button exDetailConfirmBtn;
+    [SerializeField] private GameObject exGO;
+    [SerializeField] private GameObject exGO2;
+    [SerializeField] private Transform exList;
+
     private ExerciseDataRoot exerciseReviewList = new ExerciseDataRoot();
 
     [Serializable]
@@ -70,9 +80,16 @@ public class EXReviewManager : MonoBehaviour
     [Serializable]
     public class ResultItem
     {
-        public string STUDENT;
-        public string ANSWER;
-        public string COMPLETION_TIME;
+        public int userId;
+        public string username;
+        public RecordData record;
+    }
+
+    [Serializable]
+    public class RecordData
+    {
+        public string answer = "";
+        public string completionTime = "";
     }
 
     void Start()
@@ -90,6 +107,8 @@ public class EXReviewManager : MonoBehaviour
         sortSelect.onValueChanged.AddListener(delegate{ SortOnClick(); });
         sortSelectStu.onValueChanged.AddListener(delegate { SortOnClick(); });
 
+        exDetailCloseBtn.onClick.AddListener(ExDetailCloseOnClick);
+        exDetailDimBg.onClick.AddListener(ExDetailCloseOnClick);
     }
 
     public void StartReview()
@@ -157,6 +176,7 @@ public class EXReviewManager : MonoBehaviour
         }
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
+            Debug.Log("Review 166:" + content);
             sortSelectStu.gameObject.SetActive(true);
             reviewListPanel.SetActive(true);
             exerciseReviewList = JsonUtility.FromJson<ExerciseDataRoot>("{\"root\":" + content + "}");
@@ -199,6 +219,23 @@ public class EXReviewManager : MonoBehaviour
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
             exArray[0].text = exerciseReviewList.root[i].exerciseName;
             exArray[1].text = exerciseReviewList.root[i].completionTime.Substring(8, 2) + "/" + exerciseReviewList.root[i].completionTime.Substring(5, 2);
+
+            if (exerciseReviewList.root[i].releaseDate == "" || exerciseReviewList.root[i].releaseDate == null)
+            {
+                exArray[2].text = "Answers available";
+            }
+            else
+            {
+                DateTime dateTime = DateTime.Parse(exerciseReviewList.root[i].releaseDate);
+                int res = DateTime.Compare(dateTime, DateTime.Now);
+                if (res < 0)
+                {
+
+                    exArray[2].text = "Answers release on: " + exerciseReviewList.root[i].releaseDate.Substring(8, 2) + "/" + exerciseReviewList.root[i].releaseDate.Substring(5, 2);
+                }
+            }
+            exArray[3].text = "Score: " + exerciseReviewList.root[i].correctAnswers + "/" + exerciseReviewList.root[i].questions;
+
             Image[] imgArray = exObj.GetComponentsInChildren<Image>();
             if (exerciseReviewList.root[i].difficulty == 2)
             {
@@ -264,7 +301,7 @@ public class EXReviewManager : MonoBehaviour
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
             questionIdx = 0;
-            questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
+            questionList = JsonUtility.FromJson<QuestionDataRoot>("{\"root\":" + content + "}");
             QuestionDisplay();
         }
     }
@@ -293,11 +330,13 @@ public class EXReviewManager : MonoBehaviour
 
         exName.text = "Question: " + (questionIdx + 1);
 
+        Debug.Log("333 review qidx" + questionIdx);
+        Debug.Log("334 review root length:" + questionList.root.Length);
         exQ.text = questionList.root[questionIdx].question;
 
         switch (questionList.root[questionIdx].questionType)
         {
-            case "0":
+            case 0:
                 sQGO.SetActive(false);
                 imgTextA.text = questionList.root[questionIdx].correctAnswer;
                 imgTextB.text = questionList.root[questionIdx].answerB;
@@ -323,7 +362,7 @@ public class EXReviewManager : MonoBehaviour
                 }
 
                 break;
-            case "1":
+            case 1:
                 sQGO.SetActive(true);
                 mcImageA.gameObject.SetActive(false);
                 mcImageB.gameObject.SetActive(false);
@@ -409,11 +448,11 @@ public class EXReviewManager : MonoBehaviour
         {
             GameObject exObj = Instantiate(stuObject, Vector3.zero, Quaternion.identity, listParent);
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
-            exArray[0].text = "Student: " + data.root[i].STUDENT;
-            if (data.root[i].ANSWER != "" && data.root[i].COMPLETION_TIME != "")
+            exArray[0].text = "Student: " + data.root[i].username;
+            if (data.root[i].record.answer != "" && data.root[i].record.completionTime != "")
             {
-                exArray[1].text = "Answer: " + data.root[i].ANSWER;
-                exArray[2].text = data.root[i].COMPLETION_TIME.Substring(8, 2) + "/" + data.root[i].COMPLETION_TIME.Substring(5, 2);
+                exArray[1].text = "Answer: " + data.root[i].record.answer;
+                exArray[2].text = data.root[i].record.completionTime.Substring(8, 2) + "/" + data.root[i].record.completionTime.Substring(5, 2);
             }
             else
             {
@@ -513,6 +552,15 @@ public class EXReviewManager : MonoBehaviour
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
             exArray[0].text = exerciseReviewList.root[i].exerciseName;
             exArray[1].text = exerciseReviewList.root[i].dueDate.Substring(8, 2) + "/" + exerciseReviewList.root[i].dueDate.Substring(5, 2);
+
+            if (exerciseReviewList.root[i].releaseDate == null || exerciseReviewList.root[i].releaseDate == "")
+            {
+                exArray[2].text = "";
+            }
+            else
+            {
+                exArray[2].text = "Answer release on: " + exerciseReviewList.root[i].releaseDate.Substring(8, 2) + "/" + exerciseReviewList.root[i].releaseDate.Substring(5, 2);
+            }
             Button btn = exObj.GetComponent<Button>();
             Image[] imgArray = exObj.GetComponentsInChildren<Image>();
             if (exerciseReviewList.root[i].difficulty == 2)
@@ -524,13 +572,52 @@ public class EXReviewManager : MonoBehaviour
                 imgArray[2].sprite = starOn;
                 imgArray[3].sprite = starOn;
             }
-            string eID = exerciseReviewList.root[i].exerciseId.ToString();
-            btn.onClick.AddListener(delegate { TeacherExItemOnClick(eID); });
+            int idx = i;
+            btn.onClick.AddListener(delegate { DisplayExItemDetails(idx); });
         }
+    }
+
+    void DisplayExItemDetails(int idx)
+    {
+        exDetailPanel.SetActive(true);
+        exNameText.text = exerciseReviewList.root[idx].exerciseName;
+
+        while (exList.childCount > 0)
+        {
+            DestroyImmediate(exList.GetChild(0).gameObject);
+        }
+
+        for (int i = 0; i < exerciseReviewList.root[idx].studentRecords.Length; i++)
+        {
+            GameObject studentObj = Instantiate(exGO, Vector3.zero, Quaternion.identity, exList);
+            TMP_Text[] exArray = studentObj.GetComponentsInChildren<TMP_Text>();
+            exArray[0].text = exerciseReviewList.root[idx].studentRecords[i].username;
+            exArray[1].text = "Score: " + exerciseReviewList.root[idx].studentRecords[i].correctAnswers + "/" + exerciseReviewList.root[idx].studentRecords[i].questions;
+            //Ref void 434 DisplayStudentResult(ResultItemRoot data)
+            exArray[2].text = "Submitted on: " + exerciseReviewList.root[idx].studentRecords[i].completionTime.Substring(8, 2) + "/" + exerciseReviewList.root[idx].studentRecords[i].completionTime.Substring(5, 2);
+        }
+        for (int i = 0; i < exerciseReviewList.root[idx].studentsNotAnswered.Length; i++)
+        {
+            GameObject studentObj = Instantiate(exGO2, Vector3.zero, Quaternion.identity, exList);
+            TMP_Text[] exArray = studentObj.GetComponentsInChildren<TMP_Text>();
+            exArray[0].text = exerciseReviewList.root[idx].studentsNotAnswered[i].username;
+            exArray[1].text = "Not Submitted";
+        }
+
+
+        string eID = exerciseReviewList.root[idx].exerciseId.ToString();
+        exDetailConfirmBtn.onClick.AddListener(delegate { TeacherExItemOnClick(eID); });
+    }
+
+    void ExDetailCloseOnClick()
+    {
+        exDetailConfirmBtn.onClick.RemoveAllListeners();
+        exDetailPanel.SetActive(false);
     }
 
     async void TeacherExItemOnClick(string eID)
     {
+        ExDetailCloseOnClick();
         HttpResponseMessage res;
         try
         {
@@ -568,7 +655,8 @@ public class EXReviewManager : MonoBehaviour
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
             questionIdx = 0;
-            questionList = JsonUtility.FromJson<ReviewItemRoot>("{\"root\":" + content + "}");
+            Debug.Log("658 re: " + content);
+            questionList = JsonUtility.FromJson<QuestionDataRoot>("{\"root\":" + content + "}");
             QuestionDisplay();
         }
 

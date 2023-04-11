@@ -992,11 +992,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1318608748}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 409c03d1a7e1fe64fbefd8aeb905cb88, type: 3}
+  m_Script: {fileID: 11500000, guid: 31fdd9c2752e1564c9ca38872da6a9e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  connectionCodeInput: {fileID: 298224981}
-  joinConfirmBtn: {fileID: 80810404}
+  textAssetData: {fileID: 0}
+  studentData:
+    nodes: []
+  connectionData: []
 --- !u!1 &1785769205
 GameObject:
   m_ObjectHideFlags: 0

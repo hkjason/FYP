@@ -8,6 +8,7 @@ using System.Text;
 using UnityEngine.UI;
 using System.Linq;
 using System.Net;
+using System.Collections;
 
 public class EXListManager : MonoBehaviour
 {
@@ -46,53 +47,32 @@ public class EXListManager : MonoBehaviour
     [SerializeField] private Sprite blueBtnImg;
 
     [Header("ExerciseItems")]
-    private ListItemRoot questionList;
+    private QuestionDataRoot questionList;
     private int questionIdx = 0;
     private int currentMcSelection = -1;
 
     [SerializeField] private Button nextBtn;
+    [SerializeField] private Button previousBtn;
     [SerializeField] private UIManager uIManager;
 
+    [SerializeField] private TMP_Text timerText;
+    private bool timerStarted = false;
+
     public List<QuestionRecord> questionRecordList = new List<QuestionRecord>();
-    private ListDataRoot exListData = new ListDataRoot();
+    private ExerciseDataRoot exListData = new ExerciseDataRoot();
+    private List<McShuffleRecord> mcSuffleRecord = new List<McShuffleRecord>();
     public class QuestionRecord
     {
-        public string questionId = "";
+        public int questionId = 0;
         public string answer = "";
     }
 
-    [Serializable]
-    public class ListDataRoot
+    public class McShuffleRecord
     {
-        public ListData[] root;
-    }
-       
-    [Serializable]
-    public class ListData
-    {
-        public string EXERCISE_ID;
-        public string EXERCISE_NAME;
-        public string DUEDATE;
-        public int DIFFICULTY;
-    }
-    [Serializable]
-    public class ListItemRoot
-    { 
-        public ListItem[] root;
-    }
-
-    [Serializable]
-    public class ListItem
-    {
-        public string QUESTION_ID;
-        public string E_ID;
-        public string QUESTION;
-        public string QUESTION_TYPE;
-        public string ANSWER;
-        public string ANSWER_A;
-        public string ANSWER_B;
-        public string ANSWER_C;
-        public string ANSWER_D;
+        public string firstOption = "";
+        public string secondOption = "";
+        public string thirdOption = "";
+        public string fourthOption = "";
     }
 
     void Start()
@@ -103,6 +83,7 @@ public class EXListManager : MonoBehaviour
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         nextBtn.onClick.AddListener(NextQuestion);
+        previousBtn.onClick.AddListener(LastQuestion);
         submitButton.onClick.AddListener(SubmitAnswer);
         exitExBtn.onClick.AddListener(ExitOnClick);
 
@@ -168,8 +149,8 @@ public class EXListManager : MonoBehaviour
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
             exListPanel.SetActive(true);
-            Debug.Log("exlist 171: " + content);
-            exListData = JsonUtility.FromJson<ListDataRoot>("{\"root\":" + content + "}");
+            Debug.Log("exlist 151: " + content);
+            exListData = JsonUtility.FromJson<ExerciseDataRoot>("{\"root\":" + content + "}");
             DisplayEx();
         }
 
@@ -180,22 +161,22 @@ public class EXListManager : MonoBehaviour
         switch (sortSelect.value)
         {
             case 0:
-                exListData.root = exListData.root.OrderBy(x => x.DUEDATE).ToArray();
+                exListData.root = exListData.root.OrderBy(x => x.dueDate).ToArray();
                 break;
             case 1:
-                exListData.root = exListData.root.OrderBy(x => x.EXERCISE_NAME).ToArray();
+                exListData.root = exListData.root.OrderBy(x => x.exerciseName).ToArray();
                 break;
             case 2:
-                exListData.root = exListData.root.OrderBy(x => x.DIFFICULTY).ToArray();
+                exListData.root = exListData.root.OrderBy(x => x.difficulty).ToArray();
                 break;
             case 3:
-                exListData.root = exListData.root.OrderByDescending(x => x.DUEDATE).ToArray();
+                exListData.root = exListData.root.OrderByDescending(x => x.dueDate).ToArray();
                 break;
             case 4:
-                exListData.root = exListData.root.OrderByDescending(x => x.EXERCISE_NAME).ToArray();
+                exListData.root = exListData.root.OrderByDescending(x => x.exerciseName).ToArray();
                 break;
             case 5:
-                exListData.root = exListData.root.OrderByDescending(x => x.DIFFICULTY).ToArray();
+                exListData.root = exListData.root.OrderByDescending(x => x.difficulty).ToArray();
                 break;
         }
         while (exListParent.childCount > 0)
@@ -207,28 +188,30 @@ public class EXListManager : MonoBehaviour
         {
             GameObject exObj = Instantiate(exObject, Vector3.zero, Quaternion.identity, exListParent);
             TMP_Text[] exArray = exObj.GetComponentsInChildren<TMP_Text>();
-            exArray[0].text = exListData.root[i].EXERCISE_NAME;
-            exArray[1].text = exListData.root[i].DUEDATE.Substring(8, 2) + "/" + exListData.root[i].DUEDATE.Substring(5, 2);
+            exArray[0].text = exListData.root[i].exerciseName;
+            exArray[1].text = exListData.root[i].dueDate.Substring(8, 2) + "/" + exListData.root[i].dueDate.Substring(5, 2);
+            exArray[2].text = "";
             Image[] imgArray = exObj.GetComponentsInChildren<Image>();
-            if (exListData.root[i].DIFFICULTY == 2)
+            if (exListData.root[i].difficulty == 2)
             {
                 imgArray[2].sprite = starOn;
             }
-            else if (exListData.root[i].DIFFICULTY == 3)
+            else if (exListData.root[i].difficulty == 3)
             {
                 imgArray[2].sprite = starOn;
                 imgArray[3].sprite = starOn;
             }
             Button btn = exObj.GetComponent<Button>();
-            string eID = exListData.root[i].EXERCISE_ID;
+            int eID = exListData.root[i].exerciseId;
             btn.onClick.AddListener(delegate { ExItemOnClick(eID); });
         }
     }
 
-    async void ExItemOnClick(string eID)
+    async void ExItemOnClick(int eID)
     {
         questionIdx = 0;
         questionRecordList = new List<QuestionRecord>();
+        mcSuffleRecord = new List<McShuffleRecord>();
 
         HttpResponseMessage res;
         try
@@ -246,6 +229,7 @@ public class EXListManager : MonoBehaviour
             uIManager.DoneLoading();
         }
         var content = await res.Content.ReadAsStringAsync();
+        Debug.Log("list 221: " + content);
         if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
         {
             uIManager.NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
@@ -266,11 +250,11 @@ public class EXListManager : MonoBehaviour
         }
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
-            //OK
+            questionList = JsonUtility.FromJson<QuestionDataRoot>("{\"root\":" + content + "}");
+            QuestionDisplay();
+            timerStarted = true;
+            StartCoroutine(CountTime());
         }
-
-        questionList = JsonUtility.FromJson<ListItemRoot>("{\"root\":" + content + "}");
-        QuestionDisplay();
     }
 
     void QuestionDisplay() 
@@ -279,14 +263,21 @@ public class EXListManager : MonoBehaviour
         {
             return;
         }
-
-        if (questionIdx == questionList.root.Length - 1) 
+        if (questionIdx == 0)
         {
+            nextBtn.gameObject.SetActive(true);
+            previousBtn.gameObject.SetActive(false);
+            submitButton.gameObject.SetActive(false);
+        }
+        else if (questionIdx == questionList.root.Length - 1) 
+        {
+            previousBtn.gameObject.SetActive(true);
             nextBtn.gameObject.SetActive(false);
             submitButton.gameObject.SetActive(true);
         }
         else
         {
+            previousBtn.gameObject.SetActive(true);
             nextBtn.gameObject.SetActive(true);
             submitButton.gameObject.SetActive(false);
         }
@@ -301,44 +292,104 @@ public class EXListManager : MonoBehaviour
 
         exName.text = "Question: " + (questionIdx + 1);
 
-        exQ.text = questionList.root[questionIdx].QUESTION;
+        exQ.text = questionList.root[questionIdx].question;
 
-        switch (questionList.root[questionIdx].QUESTION_TYPE)
+        if (questionIdx < questionRecordList.Count)
         {
-            case "0":
-                answerInput.gameObject.SetActive(false);
+            switch (questionList.root[questionIdx].questionType)
+            {
+                case 0:
+                    answerInput.gameObject.SetActive(false);
 
-                List<string> suffleList = new List<string> { questionList.root[questionIdx].ANSWER_A, questionList.root[questionIdx].ANSWER_B, questionList.root[questionIdx].ANSWER_C, questionList.root[questionIdx].ANSWER_D };
+                    btnTextA.text = mcSuffleRecord[questionIdx].firstOption;
+                    btnTextB.text = mcSuffleRecord[questionIdx].secondOption;
+                    btnTextC.text = mcSuffleRecord[questionIdx].thirdOption;
+                    btnTextD.text = mcSuffleRecord[questionIdx].fourthOption;
 
-                for (int i = 0; i < suffleList.Count; i++)
-                {
-                    string temp = suffleList[i];
-                    int randomIndex = UnityEngine.Random.Range(i, suffleList.Count);
-                    suffleList[i] = suffleList[randomIndex];
-                    suffleList[randomIndex] = temp;
-                }
+                    if (string.Compare(questionRecordList[questionIdx].answer, "") == 0)
+                    {
+                        currentMcSelection = -1;
+                    }
+                    else if (string.Compare(questionRecordList[questionIdx].answer, mcSuffleRecord[questionIdx].firstOption) == 0)
+                    {
+                        btnA.GetComponent<Image>().sprite = whiteBtnImg;
+                    }
+                    else if (string.Compare(questionRecordList[questionIdx].answer, mcSuffleRecord[questionIdx].secondOption) == 0)
+                    {
+                        btnB.GetComponent<Image>().sprite = whiteBtnImg;
+                    }
+                    else if (string.Compare(questionRecordList[questionIdx].answer, mcSuffleRecord[questionIdx].thirdOption) == 0)
+                    {
+                        btnC.GetComponent<Image>().sprite = whiteBtnImg;
+                    }
+                    else if (string.Compare(questionRecordList[questionIdx].answer, mcSuffleRecord[questionIdx].fourthOption) == 0)
+                    {
+                        btnD.GetComponent<Image>().sprite = whiteBtnImg;
+                    }
 
-                btnTextA.text = suffleList[0];
-                btnTextB.text = suffleList[1];
-                btnTextC.text = suffleList[2];
-                btnTextD.text = suffleList[3];
-
-                btnA.gameObject.SetActive(true);
-                btnB.gameObject.SetActive(true);
-                btnC.gameObject.SetActive(true);
-                btnD.gameObject.SetActive(true);
-                break;
-            case "1":
-                answerInput.gameObject.SetActive(true);
-                btnA.gameObject.SetActive(false);
-                btnB.gameObject.SetActive(false);
-                btnC.gameObject.SetActive(false);
-                btnD.gameObject.SetActive(false);
-                break;
-            default:
-                Debug.Log("Value error");
-                break;
+                    btnA.gameObject.SetActive(true);
+                    btnB.gameObject.SetActive(true);
+                    btnC.gameObject.SetActive(true);
+                    btnD.gameObject.SetActive(true);
+                    break;
+                case 1:
+                    answerInput.text = questionRecordList[questionIdx].answer;
+                    answerInput.gameObject.SetActive(true);
+                    btnA.gameObject.SetActive(false);
+                    btnB.gameObject.SetActive(false);
+                    btnC.gameObject.SetActive(false);
+                    btnD.gameObject.SetActive(false);
+                    break;
+            }
         }
+        else
+        {
+            switch (questionList.root[questionIdx].questionType)
+            {
+                case 0:
+                    answerInput.gameObject.SetActive(false);
+
+                    List<string> suffleList = new List<string> { questionList.root[questionIdx].answerA, questionList.root[questionIdx].answerB, questionList.root[questionIdx].answerC, questionList.root[questionIdx].answerD };
+
+                    for (int i = 0; i < suffleList.Count; i++)
+                    {
+                        string temp = suffleList[i];
+                        int randomIndex = UnityEngine.Random.Range(i, suffleList.Count);
+                        suffleList[i] = suffleList[randomIndex];
+                        suffleList[randomIndex] = temp;
+                    }
+
+                    btnTextA.text = suffleList[0];
+                    btnTextB.text = suffleList[1];
+                    btnTextC.text = suffleList[2];
+                    btnTextD.text = suffleList[3];
+
+                    McShuffleRecord recordItem = new McShuffleRecord();
+                    recordItem.firstOption = suffleList[0];
+                    recordItem.secondOption = suffleList[1];
+                    recordItem.thirdOption = suffleList[2];
+                    recordItem.fourthOption = suffleList[3];
+                    mcSuffleRecord.Add(recordItem);
+
+                    btnA.gameObject.SetActive(true);
+                    btnB.gameObject.SetActive(true);
+                    btnC.gameObject.SetActive(true);
+                    btnD.gameObject.SetActive(true);
+                    break;
+                case 1:
+                    answerInput.gameObject.SetActive(true);
+                    btnA.gameObject.SetActive(false);
+                    btnB.gameObject.SetActive(false);
+                    btnC.gameObject.SetActive(false);
+                    btnD.gameObject.SetActive(false);
+                    break;
+                default:
+                    Debug.Log("Value error");
+                    break;
+            }
+        }
+
+
 
         exDisplayParent.SetActive(true);
     }
@@ -377,24 +428,31 @@ public class EXListManager : MonoBehaviour
 
     void NextQuestion()
     {
-        if (!SaveQuestionData())
-            return;
+        SaveQuestionData();
         questionIdx++;
         QuestionDisplay();
     }
 
-    bool SaveQuestionData()
+    void LastQuestion()
     {
-        switch (questionList.root[questionIdx].QUESTION_TYPE)
+        SaveQuestionData();
+        questionIdx--;
+        QuestionDisplay();
+    }
+
+    void SaveQuestionData()
+    {
+        /*
+        switch (questionList.root[questionIdx].questionType)
         {
-            case "0":
+            case 0:
                 if (currentMcSelection == -1)
                 {
                     uIManager.NotiSetText("Please select an option", "請選擇一個選項");
                     return false;
                 }
                 break;
-            case "1":
+           case 1:
                 if (string.Compare(answerInput.text, "") == 0)
                 {
                     uIManager.NotiSetText("Please enter answer", "請輸入答案");
@@ -402,43 +460,60 @@ public class EXListManager : MonoBehaviour
                 }
                 break;
         }
-
-        QuestionRecord newRecord = new QuestionRecord();
-        newRecord.questionId = questionList.root[questionIdx].QUESTION_ID;
-        switch (questionList.root[questionIdx].QUESTION_TYPE)
+        */
+        QuestionRecord qRecord;
+        if (questionIdx == questionRecordList.Count)
         {
-            case "0":
-                if (currentMcSelection == 0) newRecord.answer = btnTextA.text;
-                if (currentMcSelection == 1) newRecord.answer = btnTextB.text;
-                if (currentMcSelection == 2) newRecord.answer = btnTextC.text;
-                if (currentMcSelection == 3) newRecord.answer = btnTextD.text;
+            qRecord = new QuestionRecord();
+        }
+        else
+        {
+            qRecord = questionRecordList[questionIdx];
+        }
+        qRecord.questionId = questionList.root[questionIdx].questionId;
+        switch (questionList.root[questionIdx].questionType)
+        {
+            case 0:
+                if (currentMcSelection == -1) qRecord.answer = "";
+                if (currentMcSelection == 0) qRecord.answer = btnTextA.text;
+                if (currentMcSelection == 1) qRecord.answer = btnTextB.text;
+                if (currentMcSelection == 2) qRecord.answer = btnTextC.text;
+                if (currentMcSelection == 3) qRecord.answer = btnTextD.text;
                 break;
-            case "1":
-                newRecord.answer = answerInput.text;
+            case 1:
+                qRecord.answer = answerInput.text;
                 break;
         }
-        questionRecordList.Add(newRecord);
-        return true;
+
+        if (questionIdx == questionRecordList.Count)
+        {
+            questionRecordList.Add(qRecord);
+        }
+        else
+        {
+            questionRecordList[questionIdx] = qRecord;
+        }
+        return;
     }
 
     void ExitOnClick()
     {
+        timerStarted = false;
         exListPanel.SetActive(true);
         exDisplayParent.SetActive(false);
     }
 
     public void ExitEx()
     {
+        timerStarted = false;
         exListPanel.SetActive(false);
         exDisplayParent.SetActive(false);
     }
 
     async void SubmitAnswer()
     {
-        if (!SaveQuestionData())
-        {
-            return;
-        }
+        Debug.Log("Submit ans 515");
+        SaveQuestionData();
 
         string dataList = "{\"root\":[";
 
@@ -449,7 +524,7 @@ public class EXListManager : MonoBehaviour
                 dataList = dataList + ",";
             }
             List<string> str = new List<string>();
-            str = new List<string> { "questionId", questionRecordList[listIdx].questionId, "answer" , questionRecordList[listIdx].answer };
+            str = new List<string> { "questionId", questionRecordList[listIdx].questionId.ToString(), "answer" , questionRecordList[listIdx].answer };
             var dataStr = StringEncoder(str);
             dataList = dataList + dataStr;
         }
@@ -463,7 +538,7 @@ public class EXListManager : MonoBehaviour
         try
         {
             uIManager.Loading();
-            res = await client.PostAsync("question/", c);
+            res = await client.PostAsync("record/", c);
         }
         catch (HttpRequestException e)
         {
@@ -500,12 +575,47 @@ public class EXListManager : MonoBehaviour
         }
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
-            //OK
+            uIManager.NotiSetText("Submit Successful", "提交成功");
+            ExitOnClick();
+            GetExList(); 
+        }
+    }
+
+
+    private IEnumerator CountTime()
+    {
+        float timer = 0;
+        Debug.Log("start timer coroutine");
+        while (timerStarted)
+        {
+            timer += Time.deltaTime;
+            float minutes = Mathf.Floor(timer / 60);
+            float seconds = Mathf.RoundToInt(timer % 60);
+
+            string minStr = "";
+            string secStr = "";
+            if (minutes < 10)
+            {
+                minStr = "0" + minutes.ToString();
+            }
+            else
+            {
+                minStr = minutes.ToString();
+            }
+            if (seconds < 10)
+            {
+                secStr = "0" + Mathf.RoundToInt(seconds).ToString();
+            }
+            else
+            {
+                secStr = seconds.ToString();
+            }
+
+            timerText.text = minStr + ":" + secStr;
+
+            yield return null;
         }
 
-        uIManager.NotiSetText("Submit Successful", "提交成功");
-        ExitOnClick();
-        //GetExList();
     }
     
     string StringEncoder(List<string> list)

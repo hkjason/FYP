@@ -37,10 +37,23 @@ public class CourseManager : MonoBehaviour
     [SerializeField] private Button joinDimBg;
     [SerializeField] private Button joinConfirmBtn;
 
+    [Header("CourseDetail")]
+    [SerializeField] private GameObject courseDetailPanel;
+    [SerializeField] private TMP_Text courseTitleText;
+    [SerializeField] private TMP_Text connectionCodeText;
+    [SerializeField] private Button courseDetailCloseBtn;
+    [SerializeField] private Button courseDetailDimBg;
+    [SerializeField] private Button courseDetailConfirmBtn;
+
+    [SerializeField] private GameObject studentGO;
+    [SerializeField] private Transform studentList;
+
     [Space(5)]
     [SerializeField] private UIManager uIManager;
     [SerializeField] private EXReviewManager eXReviewManager;
     [SerializeField] private EXListManager eXListManager;
+
+    private CourseDataRoot courseData = new CourseDataRoot();
 
     void Awake()
     {
@@ -58,6 +71,9 @@ public class CourseManager : MonoBehaviour
         joinConfirmBtn.onClick.AddListener(JoinConfirmOnClick);
         joinDimBg.onClick.AddListener(JoinCloseOnClick);
         joinPanelCloseBtn.onClick.AddListener(JoinCloseOnClick);
+
+        courseDetailCloseBtn.onClick.AddListener(CourseDetailCloseOnClick);
+        courseDetailDimBg.onClick.AddListener(CourseDetailCloseOnClick);
     }
 
     public async void GetCourseList()
@@ -103,76 +119,107 @@ public class CourseManager : MonoBehaviour
         }
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
-            CourseDataRoot data = JsonUtility.FromJson<CourseDataRoot>("{\"root\":" + content + "}");
+            Debug.Log("course122" + content);
+            courseData = JsonUtility.FromJson<CourseDataRoot>("{\"root\":" + content + "}");
             if (UserManager.instance.ROLE_TYPE == 0)
             {
                 createCourseBtn.gameObject.SetActive(true);
-                DisplayCourseTeacher(data);
+                DisplayCourseTeacher();
             }
-            else 
+            else
             {
                 joinCourseBtn.gameObject.SetActive(true);
-                DisplayCourse(data);
+                DisplayCourse();
             }
         }
     }
 
-    void DisplayCourseTeacher(CourseDataRoot courseListData)
+    void DisplayCourseTeacher()
     {
         while (courseList.childCount > 0)
         {
             DestroyImmediate(courseList.GetChild(0).gameObject);
         }
 
-        for (int i = 0; i < courseListData.root.Length; i++)
+        for (int i = 0; i < courseData.root.Length; i++)
         {
             GameObject courseObj = Instantiate(courseGOTeacher, Vector3.zero, Quaternion.identity, courseList);
             TMP_Text[] courseArray = courseObj.GetComponentsInChildren<TMP_Text>();
-            courseArray[0].text = courseListData.root[i].courseName;
-            courseArray[1].text = courseListData.root[i].students.Length + " students";
-            courseArray[2].text = courseListData.root[i].connectionCode;
+            courseArray[0].text = courseData.root[i].courseName;
+            courseArray[1].text = courseData.root[i].students.Length + " students";
+            courseArray[2].text = courseData.root[i].connectionCode;
             Button btn = courseObj.GetComponent<Button>();
-            int cID = courseListData.root[i].courseId;
-            btn.onClick.AddListener(delegate { CourseItemOnClick(cID); });
+            int recordIdx = i;
+            btn.onClick.AddListener(delegate { CourseDetailDisplay(recordIdx); });
         }
     }
 
-    void DisplayCourse(CourseDataRoot courseListData)
+    void DisplayCourse()
     {
         while (courseList.childCount > 0)
         {
             DestroyImmediate(courseList.GetChild(0).gameObject);
         }
 
-        for (int i = 0; i < courseListData.root.Length; i++)
+        for (int i = 0; i < courseData.root.Length; i++)
         {
             GameObject courseObj = Instantiate(courseGO, Vector3.zero, Quaternion.identity, courseList);
             TMP_Text[] exArray = courseObj.GetComponentsInChildren<TMP_Text>();
-            exArray[0].text = courseListData.root[i].courseName;
-            exArray[1].text = "Teacher: " + courseListData.root[i].teacher.username;
+            exArray[0].text = courseData.root[i].courseName;
+            exArray[1].text = "Teacher: " + courseData.root[i].teacher.username;
             Button btn = courseObj.GetComponent<Button>();
-            int cID = courseListData.root[i].courseId;
-            btn.onClick.AddListener(delegate { CourseItemOnClick(cID); });
+            int cID = courseData.root[i].courseId;
+            btn.onClick.AddListener(delegate { CourseSelectOnClick(cID); });
         }
     }
 
-    void CourseItemOnClick(int cID)
+    void CourseSelect(int cID)
+    {
+        CourseDetailCloseOnClick();
+        UserManager.instance.COURSEID = cID;
+        uIManager.AssignPop();
+    }
+
+    void CourseDetailDisplay(int idx)
+    {
+        Debug.Log("185idx" + idx);
+        Debug.Log("rootlength" + courseData.root.Length);
+        courseDetailPanel.SetActive(true);
+        courseTitleText.text = courseData.root[idx].courseName;
+        connectionCodeText.text = courseData.root[idx].connectionCode;
+
+        while (studentList.childCount > 0)
+        {
+            DestroyImmediate(studentList.GetChild(0).gameObject);
+        }
+
+        for (int i = 0; i < courseData.root[idx].students.Length; i++)
+        {
+            GameObject studentObj = Instantiate(studentGO, Vector3.zero, Quaternion.identity, studentList);
+            TMP_Text[] exArray = studentObj.GetComponentsInChildren<TMP_Text>();
+            exArray[0].text = "User Id: " + courseData.root[idx].students[i].userId.ToString();
+            exArray[1].text = courseData.root[idx].students[i].username;
+        }
+
+        int cID = courseData.root[idx].courseId;
+        courseDetailConfirmBtn.onClick.AddListener( delegate{ CourseSelect(cID); });
+    }
+
+    void CourseSelectOnClick(int cID)
     {
         UserManager.instance.COURSEID = cID;
-        switch (UserManager.instance.ROLE_TYPE)
-        {
-            case 0:
-                uIManager.AssignPop();
-                break;
-            case 1:
-                uIManager.ExerciseListPop();
-                break;
-        }
+        uIManager.ExerciseListPop();
     }
 
     void CreateCourseOnClick()
     {
         createPanel.SetActive(true);
+    }
+
+    void CourseDetailCloseOnClick()
+    {
+        courseDetailConfirmBtn.onClick.RemoveAllListeners();
+        courseDetailPanel.SetActive(false);
     }
 
     async void CreateConfirmOnClick()
@@ -242,7 +289,7 @@ public class CourseManager : MonoBehaviour
         List<string> str = new List<string> { "userId", UserManager.instance.UID, "connectionCode", connectionCodeInput.text };
         var payload = ExtensionFunction.StringEncoder(str);
         HttpContent c = new StringContent(payload, Encoding.UTF8, "application/json");
-        HttpResponseMessage res = await client.PostAsync("course/register", c);
+        HttpResponseMessage res;
         try
         {
             uIManager.Loading();

@@ -39,6 +39,9 @@ public class LoginManager : MonoBehaviour
     [SerializeField] private Transform noti;
     [SerializeField] private TMP_Text notiText;
 
+    [SerializeField] private Transform notiOri;
+    [SerializeField] private Transform notiTo;
+
     [Serializable]
     public class UserData
     {
@@ -92,6 +95,7 @@ public class LoginManager : MonoBehaviour
             DoneLoading();
         }
         var content = await res.Content.ReadAsStringAsync();
+        Debug.Log("login95: " + content);
         if (res.StatusCode.Equals(HttpStatusCode.InternalServerError))
         {
             NotiSetText("Server Error, please try again later", "服務器錯誤，請稍後再試");
@@ -117,6 +121,11 @@ public class LoginManager : MonoBehaviour
         }
         else if (res.StatusCode.Equals(HttpStatusCode.OK))
         {
+            if (string.Compare(content, "Incorrect password.") == 0)
+            {
+                NotiSetText("Incorrect password", "密碼錯誤");
+                return;
+            }
             var data = JsonUtility.FromJson<UserData>(content);
             UserManager.instance.UID = data.userId.ToString();
             UserManager.instance.USERNAME = data.username;
@@ -264,11 +273,13 @@ public class LoginManager : MonoBehaviour
     void NotiPop()
     {
         DOTween.Kill(noti);
-        noti.DOMoveY(1835, 0.2f).OnComplete(NotiUnpop);
+        //noti.DOMoveY(1835, 0.2f).OnComplete(NotiUnpop);
+        noti.DOMoveY(notiTo.position.y, 0.2f).OnComplete(NotiUnpop);
     }
 
     void NotiUnpop()
     {
-        noti.DOMoveY(2015, 0.2f).SetDelay(2);
+        //noti.DOMoveY(2015, 0.2f).SetDelay(2);
+        noti.DOMoveY(notiOri.position.y, 0.2f).SetDelay(2);
     }
 }

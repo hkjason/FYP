@@ -1,15 +1,17 @@
 using System;
 
 [Serializable]
-public class ReviewItem
+public class QuestionData
 {
-    public string questionId;
+    public int questionId;
     public string question;
-    public string questionType;
+    public int questionType;
     public string answerA;
     public string answerB;
     public string answerC;
     public string answerD;
     public string correctAnswer;
     public string answer;
+    public int exerciseId;
+    public RecordData[] records;
 }
